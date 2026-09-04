@@ -1,0 +1,238 @@
+safety_monitor_node:
+  ros__parameters:
+    # LiDAR PointCloud2 input. Change only if the LiDAR driver publishes a different topic.
+    pointcloud_topic: "/cx/lslidar_point_cloud"
+    # Raw LiDAR emergency-stop decision consumed by sensor_fusion_node.
+    safety_stop_topic: "/lidar_safety_stop"
+    # Raw LiDAR route summary consumed by sensor_fusion_node.
+    route_status_topic: "/lidar_route_status"
+    # Until the measured base_link pose is available, evaluate safety directly
+    # in the honest raw sensor frame: +x forward, +y left, +z up.
+    base_frame: "laser_link"
+    # The LiDAR driver publishes laser_link, so no transform is needed here.
+    enable_tf_transform: true
+    # More forgiving than exact timestamp TF lookup; useful for simple static LiDAR TF.
+    use_latest_transform: true
+    # TF wait time. If route_status transform_ok is often false, try 0.1 before changing boxes.
+    transform_timeout_sec: 0.05
+    # In drive mode, keep true: missing/bad TF should stop the robot instead of guessing.
+    fail_safe_on_transform_error: true
+    # Live bumper self-returns measured 11-24 points across ten scans.
+    # The comparison is count > threshold, so 31+ points requests a stop.
+    hard_stop_point_threshold: 30
+    # Default route block threshold. Per-route values below override this.
+    route_block_point_threshold: 40
+    # More points than threshold means that route is blocked.
+    # Higher = route is easier to consider clear. Lower = more conservative.
+    # These thresholds apply only to route selection, not the emergency region.
+    route_block_point_thresholds:
+      front: 240
+      back: 80
+      left: 120
+      right: 120
+    # The LiDAR is 20 cm behind the front bumper. Start at the bumper and monitor
+    # the next 20 cm. The full lateral span is 1 m (-0.5 to +0.5 m).
+    # Z is deliberately ignored; the point threshold above rejects the stable
+    # front-bumper corner return observed during calibration.
+    hard_stop_box:
+      x_min: 0.2
+      x_max: 0.4
+      y_min: -0.5
+      y_max: 0.5
+      use_z_filter: false
+    # Larger route-check zones for choosing search/relocation directions.
+    # These do not directly trigger a stop; they feed /lidar_route_status clear/blocked.
+    route_box:
+      # Shared height filter for all route boxes. Raise z_min if floor noise is counted.
+      z_min: 0.15
+      z_max: 1.5
+      # Forward clearance zone used before creeping forward.
+      front:
+        # 20 cm deep, spanning 1 m from right to left.
+        x_min: 0.2
+        x_max: 0.4
+        y_min: -0.5
+        y_max: 0.5
+      # Reverse clearance zone used only if back is selected for relocation.
+      back:
+        x_min: -0.4
+        x_max: -0.2
+        y_min: -0.5
+        y_max: 0.5
+      # Left-side clearance zone used before left rotation/relocation.
+      left:
+        x_min: -0.5
+        x_max: 0.5
+        y_min: 0.2
+        y_max: 0.4
+      # Right-side clearance zone used before right rotation/relocation.
+      right:
+        x_min: -0.5
+        x_max: 0.5
+        y_min: -0.4
+        y_max: -0.2
+    # Angle-based LiDAR corridor fitting. The measured robot width is 0.57 m;
+    # 0.60 m leaves about 0.015 m nominal clearance on each side.
+    corridor:
+      width_m: 0.60
+      # The LiDAR is approximately 0.20 m behind the front bumper.
+      start_distance_m: 0.20
+      # Evaluate a substantially longer strip than the legacy 0.20 m box.
+      lookahead_distance_m: 1.20
+      # An angle fits only if at least this much robot-width strip is free.
+      minimum_free_length_m: 0.6
+      # Forward and side candidates only; rear candidates are disabled for now.
+      candidate_angles_deg: [-60.0, -45.0, -30.0, -15.0, 0.0, 15.0, 30.0, 45.0, 60.0]
+depth_route_monitor_node:
+  ros__parameters:
+    # Raw RealSense depth. The aligned topic is advertised on this camera but emits no frames.
+    # Route sectors need no registration; target-bbox depth uses a central crop
+    # as an approximate RGB/depth association and must be mount-calibrated.
+    depth_image_topic: "/camera/camera/depth/image_rect_raw"
+    # Raw depth decisions consumed by sensor_fusion_node.
+    depth_safety_stop_topic: "/depth_safety_stop"
+    depth_route_status_topic: "/depth_route_status"
+    # VLA target bounding boxes associate raw depth with the visible trash can.
+    target_status_topic: "/target_status"
+    target_status_timeout_sec: 4.0
+    target_depth_percentile: 30.0
+    # A high-confidence goal bbox is excluded from generic obstacle pixels only
+    # until it reaches the requested 30 cm mission standoff.
+    target_ignore_until_distance_m: 0.30
+    minimum_target_confidence: 0.70
+    # Analyze the useful middle portion of the image and split it left/front/right.
+    roi_top_fraction: 0.2
+    roi_bottom_fraction: 0.82
+    # Depth is binary at 60 cm: inside blocks front, beyond permits travel.
+    min_depth_m: 0.075
+    max_depth_m: 3.0
+    # Stop for close center obstacles and block routes with nearby obstacles.
+    hard_stop_distance_m: 0.6
+    route_block_distance_m: 0.6
+    obstacle_pixel_fraction: 0.02
+    minimum_valid_fraction: 0.25
+    clearance_percentile: 10.0
+    # Require consecutive clear frames; stale or invalid depth remains fail-safe stopped.
+    required_clear_frames: 3
+    input_timeout_sec: 1.0
+
+sensor_fusion_node:
+  ros__parameters:
+    # Raw per-sensor decisions.
+    lidar_safety_stop_topic: "/lidar_safety_stop"
+    depth_safety_stop_topic: "/depth_safety_stop"
+    lidar_route_status_topic: "/lidar_route_status"
+    depth_route_status_topic: "/depth_route_status"
+    # Final fused decisions consumed by behavior, status, logging, and the command mux.
+    safety_stop_topic: "/safety_stop"
+    route_status_topic: "/route_status"
+    safety_stop_reason_topic: "/safety_stop_reason"
+    # Missing or stale data from either sensor causes a fail-safe stop.
+    input_timeout_sec: 1.0
+    publish_rate_hz: 10.0
+
+vlm_goal_monitor_node:
+  ros__parameters:
+    # Raw VLM result string from simple_vlm.
+    vlm_result_topic: "/vlm_result"
+    # Boolean target-visible output.
+    target_detected_topic: "/target_detected"
+    # JSON parsed target state: visible, position, distance estimate, camera obstacles.
+    target_status_topic: "/target_status"
+    # Legacy text keywords for non-JSON VLM outputs.
+    target_keywords:
+      - "trash can visible"
+
+search_behavior_node:
+  ros__parameters:
+    # Inputs from VLM parsing and fused LiDAR/depth safety.
+    target_detected_topic: "/target_detected"
+    target_status_topic: "/target_status"
+    safety_stop_topic: "/safety_stop"
+    route_status_topic: "/route_status"
+    # Autonomy command output before final safety mux.
+    cmd_vel_autonomy_topic: "/cmd_vel_autonomy"
+    # Mission state outputs for logs/operator status.
+    mission_complete_topic: "/mission_complete"
+    mission_status_topic: "/mission_status"
+    # Continuous VLA mode replaces the fixed rotate/forward/search timers. Each
+    # inference proposes a fresh [linear_x, angular_z] action and speed.
+    planner_mode: "vla"
+    # These are immutable safety ceilings, not commanded cruising speeds.
+    vla_max_linear_speed_mps: 0.06
+    vla_max_angular_speed_radps: 0.15
+    vla_minimum_confidence: 0.35
+    # Use only fitting front/side corridors; stop when none is available.
+    # A stale model proposal or sensor route is never held indefinitely.
+    target_timeout_sec: 4.0
+    route_timeout_sec: 1.5
+    # Stop 30 cm from the detected trash-can bbox using associated depth.
+    approach_stop_distance_m: 0.30
+    # Number of centered target-depth confirmations before declaring success.
+    required_close_confirmations: 2
+    # Behavior command publish rate.
+    publish_rate_hz: 10.0
+    # Start stopped until real /safety_stop data arrives.
+    initial_safety_stop: true
+    # Stop the behavior launch after mission success.
+    exit_on_mission_complete: true
+
+cmd_vel_mux_node:
+  ros__parameters:
+    # Input command from autonomy.
+    cmd_vel_autonomy_topic: "/cmd_vel_autonomy"
+    # Final emergency-stop input from sensor_fusion_node.
+    safety_stop_topic: "/safety_stop"
+    # Final velocity topic. Launch overrides this to /cmd_vel_debug in dry_run mode.
+    output_cmd_vel_topic: "/cmd_vel"
+    # If autonomy command is older than this, publish zero velocity.
+    command_timeout_sec: 0.5
+    # Reject every negative velocity command.
+    allow_reverse: false
+    # Final defense-in-depth caps for model-proposed actions.
+    max_linear_speed_mps: 0.06
+    max_angular_speed_radps: 0.15
+    # Final velocity publish rate.
+    publish_rate_hz: 20.0
+    # Smooth normal starts/stops. At the configured search speeds this reaches
+    # cruising speed gently, while normal braking remains stronger than acceleration.
+    linear_acceleration_mps2: 0.06
+    linear_deceleration_mps2: 0.125
+    angular_acceleration_radps2: 0.175
+    angular_deceleration_radps2: 0.35
+    # Safety stop, missing command, and watchdog timeout still bypass the ramp
+    # and publish zero immediately.
+    # Start stopped until real /safety_stop data arrives.
+    initial_safety_stop: true
+
+operator_status_node:
+  ros__parameters:
+    # Publish only concise actionable mission notices on /autonomy_notice.
+    status_topic: "/autonomy_notice"
+    route_status_topic: "/route_status"
+    publish_rate_hz: 2.0
+    repeat_notice_sec: 10.0
+    stale_timeout_sec: 12.0
+
+data_logger_node:
+  ros__parameters:
+    # Autonomy JSONL logs. Inside Docker, this maps to the mounted vlm_results path.
+    log_directory: "~/vlm_results/autonomy_logs"
+    # Log filename prefix.
+    log_prefix: "trash_mission"
+    # Transition-only file identifying the exact sensor/node that stopped motion.
+    safety_event_prefix: "safety_events"
+    # One correlated row per VLM inference showing bbox -> depth -> sensor fusion.
+    perception_trace_prefix: "perception_trace"
+    # Periodic sample rate. Increase to 5.0 for more detailed debugging logs.
+    sample_rate_hz: 1.0
+    # Optional live human label topic, e.g. "bad_route: pushed obstacle".
+    operator_label_topic: "/operator_label"
+    # Record both final fused decisions and each sensor's raw decisions.
+    safety_stop_topic: "/safety_stop"
+    route_status_topic: "/route_status"
+    safety_stop_reason_topic: "/safety_stop_reason"
+    lidar_safety_stop_topic: "/lidar_safety_stop"
+    depth_safety_stop_topic: "/depth_safety_stop"
+    lidar_route_status_topic: "/lidar_route_status"
+    depth_route_status_topic: "/depth_route_status"

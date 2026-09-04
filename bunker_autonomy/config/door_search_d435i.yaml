@@ -1,0 +1,43 @@
+depth_route_monitor_node:
+  ros__parameters:
+    depth_image_topic: "/camera/camera/aligned_depth_to_color/image_raw"
+    min_depth_m: 0.01
+    # Keep useful D435i returns through 6 m. The safety stop trigger itself is
+    # the 0.05 m hard-stop threshold below.
+    max_depth_m: 6.0
+    hard_stop_distance_m: 0.05
+    route_block_distance_m: 0.05
+    # Only very close depth returns now block travel or trigger stop.
+    obstacle_pixel_fraction: 0.02
+    allow_front_obstacle_reroute: false
+    clearance_percentile: 10.0
+    required_clear_frames: 1
+    minimum_valid_fraction: 0.1
+sensor_fusion_node:
+  ros__parameters:
+    fusion_mode: "depth_only"
+    input_timeout_sec: 1.0
+search_behavior_node:
+  ros__parameters:
+    # Move through clear forward space; when it is blocked the behavior node
+    # chooses a verified clear side route. Track the YOLO door bbox and stop
+    # only after its aligned-depth distance reaches the required standoff.
+    planner_mode: "forward_exploration"
+    # A noisy single depth frame causes a safe stop, but not an immediate side
+    # turn. Only a persistent blocked route starts a left/right relocation.
+    front_block_confirmation_sec: 0.75
+    # Forward exploration has no timed scan phase: this is its cruise speed.
+    # 0.04 m/s is the half-speed D435i-only autonomy profile.
+    search_linear_speed: 0.04
+    approach_linear_speed: 0.04
+    # Stop one metre before the confirmed door using aligned D435i depth.
+    approach_stop_distance_m: 1.00
+    complete_on_target_detection: false
+    required_close_confirmations: 2
+    initial_safety_stop: true
+cmd_vel_mux_node:
+  ros__parameters:
+    # The final mux caps every autonomy command, including exploration.
+    max_linear_speed_mps: 0.04
+    max_angular_speed_radps: 0.10
+    initial_safety_stop: true

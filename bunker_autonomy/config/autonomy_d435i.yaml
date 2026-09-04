@@ -1,0 +1,134 @@
+# Camera-only autonomy profile for an arm-mounted Intel RealSense D435i.
+# Start in mode:=dry_run and tune the image ROI for the actual fixed arm pose.
+
+depth_route_monitor_node:
+  ros__parameters:
+    # Aligned depth shares the RGB image geometry used for VLM target bboxes.
+    depth_image_topic: "/front_camera/aligned_depth_to_color/image_raw"
+    front_depth_image_topic: "/front_camera/aligned_depth_to_color/image_raw"
+    rear_depth_image_topic: "/rear_camera/aligned_depth_to_color/image_raw"
+    active_camera_topic: "/landmark_navigator/active_camera"
+    active_depth_camera: "front"
+    depth_safety_stop_topic: "/depth_safety_stop"
+    depth_route_status_topic: "/depth_route_status"
+    target_status_topic: "/target_status"
+    target_status_timeout_sec: 4.0
+    target_depth_percentile: 30.0
+    target_ignore_until_distance_m: 0.30
+    minimum_target_confidence: 0.70
+
+    # Image-space mount calibration. These values define the usable portion of
+    # the arm-mounted camera view and the left/front/right navigation sectors.
+    # Fractions are normalized to the aligned depth image (0.0 through 1.0).
+    # Locked camera mount: base_link -> camera_link = (+0.60, 0.00, +0.62) m,
+    # level and facing forward.  Bunker Mini body is approximately 0.69 x 0.57 m.
+    camera_view_name: "arm_top_forward"
+    # Ignore edge pixels and the near robot/arm/body area in the lower image.
+    # Nav2 costmaps still consume the pointcloud; this monitor is only the
+    # conservative emergency route gate.
+    roi_top_fraction: 0.20
+    roi_bottom_fraction: 0.75
+    roi_left_fraction: 0.15
+    roi_right_fraction: 0.85
+    left_sector_end_fraction: 0.333333
+    right_sector_start_fraction: 0.666667
+
+    min_depth_m: 0.01
+    # Keep the validity range wide so normal far pixels stay valid. The safety
+    # stop trigger itself is the 0.05 m hard-stop threshold below.
+    max_depth_m: 6.0
+    hard_stop_distance_m: 0.05
+    route_block_distance_m: 0.05
+    obstacle_pixel_fraction: 0.02
+    allow_front_obstacle_reroute: false
+    # Aligned D435i depth has holes at RGB edges and on reflective surfaces.
+    # 5% of the front navigation ROI is sufficient for a dry-run *only* when
+    # all close-depth checks are clear; zero/invalid depth still stops.
+    # Validate this visually before using mode:=drive.
+    minimum_valid_fraction: 0.05
+    clearance_percentile: 10.0
+    required_clear_frames: 1
+    input_timeout_sec: 1.0
+
+sensor_fusion_node:
+  ros__parameters:
+    # The node keeps its historical name, but in this mode only D435i depth is
+    # required and no LiDAR topics are subscribed.
+    fusion_mode: "depth_only"
+    depth_safety_stop_topic: "/depth_safety_stop"
+    depth_route_status_topic: "/depth_route_status"
+    safety_stop_topic: "/safety_stop"
+    route_status_topic: "/route_status"
+    safety_stop_reason_topic: "/safety_stop_reason"
+    input_timeout_sec: 1.0
+    publish_rate_hz: 10.0
+
+vlm_goal_monitor_node:
+  ros__parameters:
+    vlm_result_topic: "/vlm_result"
+    target_detected_topic: "/target_detected"
+    target_status_topic: "/target_status"
+    target_keywords:
+      - "trash can visible"
+
+search_behavior_node:
+  ros__parameters:
+    target_detected_topic: "/target_detected"
+    target_status_topic: "/target_status"
+    safety_stop_topic: "/safety_stop"
+    route_status_topic: "/route_status"
+    cmd_vel_autonomy_topic: "/cmd_vel_autonomy"
+    mission_complete_topic: "/mission_complete"
+    mission_status_topic: "/mission_status"
+    planner_mode: "vla"
+    vla_max_linear_speed_mps: 0.04
+    vla_max_angular_speed_radps: 0.125
+    vla_minimum_confidence: 0.35
+    # The behavior republishes the latest fresh proposal at 10 Hz while the next
+    # asynchronous VLM request runs. Stop if no new accepted proposal arrives.
+    target_timeout_sec: 8.0
+    route_timeout_sec: 1.5
+    approach_stop_distance_m: 0.30
+    required_close_confirmations: 2
+    publish_rate_hz: 10.0
+    initial_safety_stop: true
+    exit_on_mission_complete: true
+
+cmd_vel_mux_node:
+  ros__parameters:
+    cmd_vel_autonomy_topic: "/cmd_vel_autonomy"
+    safety_stop_topic: "/safety_stop"
+    output_cmd_vel_topic: "/cmd_vel"
+    command_timeout_sec: 0.5
+    allow_reverse: false
+    max_linear_speed_mps: 0.04
+    max_angular_speed_radps: 0.125
+    publish_rate_hz: 20.0
+    linear_acceleration_mps2: 0.04
+    linear_deceleration_mps2: 0.125
+    angular_acceleration_radps2: 0.15
+    angular_deceleration_radps2: 0.35
+    initial_safety_stop: true
+
+operator_status_node:
+  ros__parameters:
+    navigation_mode: "depth_only"
+    status_topic: "/autonomy_notice"
+    route_status_topic: "/route_status"
+    publish_rate_hz: 2.0
+    repeat_notice_sec: 10.0
+    stale_timeout_sec: 12.0
+
+data_logger_node:
+  ros__parameters:
+    log_directory: "~/vlm_results/autonomy_logs"
+    log_prefix: "d435i_trash_mission"
+    safety_event_prefix: "d435i_safety_events"
+    perception_trace_prefix: "d435i_perception_trace"
+    sample_rate_hz: 1.0
+    operator_label_topic: "/operator_label"
+    safety_stop_topic: "/safety_stop"
+    route_status_topic: "/route_status"
+    safety_stop_reason_topic: "/safety_stop_reason"
+    depth_safety_stop_topic: "/depth_safety_stop"
+    depth_route_status_topic: "/depth_route_status"

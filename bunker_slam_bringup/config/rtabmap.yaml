@@ -1,0 +1,60 @@
+rgbd_sync:
+  ros__parameters:
+    approx_sync: true
+    approx_sync_max_interval: 0.08
+    topic_queue_size: 30
+    sync_queue_size: 30
+    qos: 1
+    qos_camera_info: 1
+    depth_scale: 1.0
+
+rtabmap:
+  ros__parameters:
+    frame_id: base_link
+    map_frame_id: map
+    # Use the Bunker odometry TF as the map child frame. RTAB-Map owns
+    # map -> odom and the Bunker driver owns odom -> base_link.
+    odom_frame_id: odom
+    publish_tf: true
+    subscribe_rgb: false
+    subscribe_depth: false
+    subscribe_rgbd: true
+    rgbd_cameras: 1
+    subscribe_scan: false
+    subscribe_scan_cloud: false
+    subscribe_odom_info: false
+    approx_sync: true
+    topic_queue_size: 30
+    sync_queue_size: 30
+    qos_image: 1
+    qos_camera_info: 1
+    qos_odom: 1
+    wait_for_transform: 0.25
+    use_sim_time: false
+    # Re-publish the current 2-D grid even while the robot is stationary, so a
+    # late RViz/map-saver subscriber is not dependent on a new odometry node.
+    map_always_update: true
+
+    "Rtabmap/DetectionRate": "3.0"
+    "RGBD/LinearUpdate": "0.08"
+    "RGBD/AngularUpdate": "0.08"
+    "RGBD/OptimizeFromGraphEnd": "false"
+    "RGBD/NeighborLinkRefining": "true"
+    "RGBD/ProximityBySpace": "true"
+    "RGBD/ProximityPathMaxNeighbors": "10"
+    "RGBD/OptimizeMaxError": "3.0"
+    "Reg/Force3DoF": "true"
+    "Mem/IncrementalMemory": "true"
+    "Mem/InitWMWithAllNodes": "false"
+    "Mem/BinDataKept": "true"
+    "Mem/SaveDepth16Format": "true"
+    # RTAB-Map >=0.20.15 replaced Grid/FromDepth with Grid/Sensor.
+    # 1 selects the RGB-D camera and does not enable laser subscriptions.
+    "Grid/Sensor": "1"
+    "Grid/3D": "false"
+    "Grid/CellSize": "0.05"
+    "Grid/RangeMin": "0.25"
+    "Grid/RangeMax": "6.0"
+    "Grid/MaxGroundHeight": "0.10"
+    "Grid/MaxObstacleHeight": "1.80"
+    "Grid/RayTracing": "true"

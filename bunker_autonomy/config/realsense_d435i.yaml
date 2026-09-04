@@ -1,0 +1,34 @@
+# Intel RealSense D435i: RGB for simple_vlm and aligned depth for navigation.
+#
+# Only the color and depth imagers are enabled. The D435i IMU, infrared streams,
+# and point-cloud filter are intentionally disabled for this camera-only pipeline.
+device_type: "d435i"
+enable_depth: true
+enable_color: true
+enable_infra: false
+enable_infra1: false
+enable_infra2: false
+enable_gyro: false
+enable_accel: false
+enable_motion: false
+initial_reset: false
+
+# Alignment is important: target_bbox_norm is produced from RGB, so target
+# distance must be sampled from depth registered to the color image.
+enable_sync: true
+align_depth.enable: true
+
+# USB-3 profile. The active D435i link now reports USB 3.2, so use matching
+# 640x480 RGB and aligned-depth streams at a conservative 15 Hz.
+depth_module.depth_profile: "640x480x15"
+rgb_camera.color_profile: "640x480x15"
+
+# This D435i firmware accepts 0=disabled, 1=50 Hz, 2=60 Hz (not the driver's
+# auto value 3). Hong Kong mains lighting is 50 Hz, so use 1 and avoid the
+# startup range warning.
+
+# Calibration and door navigation consume RGB plus aligned depth directly.
+# A point cloud is not needed, and disabling it avoids a third high-bandwidth
+# processing path while recovering from D435i UVC reconnects on this Jetson.
+pointcloud.enable: false
+pointcloud__neon_.enable: false

@@ -1,0 +1,77 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /MotionPlanning1
+  - Class: rviz_common/Help
+    Name: Help
+  - Class: rviz_common/Views
+    Name: Views
+Visualization Manager:
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Grid
+      Value: true
+    - Class: moveit_rviz_plugin/MotionPlanning
+      Name: MotionPlanning
+      Move Group Namespace: /front_piper
+      Planning Request:
+        Interactive Marker Size: 0.1
+        Planning Group: arm
+        Workspace:
+          Center X: 0
+          Center Y: 0.1
+          Center Z: 0.85
+          Size X: 1.15
+          Size Y: 0.6
+          Size Z: 0.6
+      Planned Path:
+        Loop Animation: true
+        Robot Alpha: 1
+        Show Robot Collision: false
+        Show Robot Visual: true
+        State Display Time: 0.05 s
+        Trajectory Topic: /front_piper/display_planned_path
+      Planning Scene Topic: /front_piper/monitored_planning_scene
+      Robot Description: robot_description
+      Scene Geometry:
+        Scene Alpha: 1
+      Scene Robot:
+        Robot Alpha: 0
+        Show Robot Collision: false
+        Show Robot Visual: false
+      Value: true
+    - Class: rviz_default_plugins/TF
+      Enabled: true
+      Frame Timeout: 15
+      Marker Scale: 0.08
+      Name: Front PiPER TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+  Global Options:
+    Background Color: 32; 32; 32
+    Fixed Frame: base_link
+    Frame Rate: 15
+  Tools:
+    - Class: rviz_default_plugins/Interact
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/FocusCamera
+  Value: true
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 2.0
+      Focal Point:
+        X: -0.1
+        Y: 0.25
+        Z: 0.30
+      Name: Current View
+      Pitch: 0.5
+      Target Frame: base_link
+      Yaw: -0.623
+Window Geometry:
+  Height: 975
+  Width: 1200

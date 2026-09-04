@@ -1,0 +1,11 @@
+bool execute
+string direction
+int32 max_steps
+---
+bool success
+bool marker_found
+int32 marker_id
+string found_at_pose
+int32 poses_checked
+string stage
+string message

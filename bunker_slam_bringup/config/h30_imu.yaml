@@ -1,0 +1,8 @@
+# WHEELTEC / YESENSE H30 through the detected WCH USB serial adapter.
+# /dev/serial/by-id is stable across ttyACM renumbering.
+yesense_pub:
+  ros__parameters:
+    serial_port: /dev/serial/by-id/usb-WCH.CN_USB_Single_Serial_0003-if00
+    baud_rate: 460800
+    frame_id: imu_link
+    driver_type: ros_serial

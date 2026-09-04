@@ -1,0 +1,34 @@
+# Intel RealSense D435i serial 261222075829, wrapper 4.58.2.
+# This D435i is the active RGB-D camera for the minimal mapping stack.
+device_type: "d435"
+enable_depth: true
+enable_color: true
+enable_infra: false
+enable_infra1: false
+enable_infra2: false
+
+# RGB-D-only camera profile. Vehicle odometry is supplied by the Bunker wheel
+# feedback and the separately mounted WHEELTEC/YESENSE H30, so do not start the
+# D435i motion module. This avoids USB motion-module failures
+# while preserving RGB, aligned depth, CameraInfo and camera TF.
+enable_gyro: false
+enable_accel: false
+enable_motion: false
+unite_imu_method: 0
+
+initial_reset: false
+enable_sync: true
+enable_rgbd: false
+align_depth.enable: true
+
+# Keep a conservative, matching RGB-D profile for stable mapping.
+depth_module.depth_profile: "640x480x15"
+rgb_camera.color_profile: "640x480x15"
+
+pointcloud.enable: false
+publish_tf: true
+tf_publish_rate: 0.0
+# This D435i/firmware rejects the optional ASIC-temperature UVC query even
+# while RGB-D streams remain healthy. Disable that telemetry poll to avoid
+# repeated ds-options errors; camera topics and reconnect handling are unchanged.
+diagnostics_period: 0.0

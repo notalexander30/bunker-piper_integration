@@ -1,0 +1,14 @@
+enable_color: true
+enable_depth: true
+rgb_camera.color_profile: 1280x720x30
+align_depth.enable: true
+
+# RealSense ROS v4.58 on Jetson exposes the pointcloud filter under this
+# NEON-specific parameter name. The older launch argument pointcloud.enable is
+# still passed for compatibility, but this is the parameter that actually
+# starts /front_camera/depth/color/points in the iliyas-abot container.
+pointcloud__neon_.enable: true
+pointcloud__neon_.stream_filter: 2
+pointcloud__neon_.stream_index_filter: 0
+pointcloud__neon_.ordered_pc: false
+pointcloud__neon_.allow_no_texture_points: false

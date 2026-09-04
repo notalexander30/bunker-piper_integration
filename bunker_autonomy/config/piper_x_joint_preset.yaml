@@ -1,0 +1,6 @@
+# PiPER-X rear-arm preset.
+#
+# Joint order is [joint1, joint2, joint3, joint4, joint5, joint6].
+# Values are radians.
+rear: [1.6, 1.0, 0.0, 0.0, 0.0, 0.0]
+hold_sec: 1.0

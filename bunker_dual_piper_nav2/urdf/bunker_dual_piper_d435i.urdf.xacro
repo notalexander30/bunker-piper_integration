@@ -1,0 +1,257 @@
+<?xml version="1.0"?>
+<robot name="bunker_dual_piper_d435i" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find bunker_dual_piper_nav2)/urdf/piper_arm_macro.xacro"/>
+  <xacro:include filename="$(find realsense2_description)/urdf/_d435i.urdf.xacro"/>
+
+  <!-- Firmware before S-V1.6-3 uses the legacy PiPER joint-2/joint-3 offsets. -->
+  <xacro:arg name="front_piper_legacy" default="false"/>
+  <xacro:arg name="rear_piper_legacy" default="false"/>
+  <xacro:arg name="front_piper_mount_rpy" default="0 0 1.57079632679"/>
+  <xacro:arg name="rear_piper_mount_rpy" default="0 0 1.57079632679"/>
+
+  <!-- Calibrated D435i color optical frame directly relative to the PiPER flange. -->
+  <xacro:arg name="front_camera_xyz" default="-0.03325362536889407 -0.04784194427852743 0.08630445414919316"/>
+  <!-- Measured D435i calibration, expressed directly from the arm flange. -->
+  <xacro:arg name="front_camera_rpy" default="-0.08017405150425999 -0.0031709794581423934 0.023976595541682157"/>
+  <xacro:arg name="front_camera_name" default="front_camera"/>
+  <!-- Enable nominal optical frames only when no live RealSense driver publishes them. -->
+  <xacro:arg name="front_camera_nominal_extrinsics" default="true"/>
+  <!-- Calibrated rear D435i color optical frame directly relative to the rear PiPER flange. -->
+  <xacro:arg name="rear_camera_xyz" default="-0.0016016943280790555 -0.07988793520475261 0.0420998734823866"/>
+  <xacro:arg name="rear_camera_rpy" default="-0.0041241555313950035 -0.003886773443390706 0.0554203109827187"/>
+  <xacro:arg name="simulation" default="false"/>
+  <xacro:arg name="sim_cmd_vel_topic" default="/cmd_vel_sim"/>
+  <xacro:arg name="sim_odom_topic" default="/odom"/>
+  <xacro:arg name="sim_tf_topic" default="/tf"/>
+
+  <xacro:property name="robot_pi" value="3.141592653589793"/>
+  <xacro:property name="base_link_height" value="0.274197"/>
+  <xacro:property name="plate_bottom_height" value="0.614"/>
+  <xacro:property name="plate_thickness" value="0.017"/>
+  <xacro:property name="plate_center_x" value="0.356"/>
+  <xacro:property name="front_piper_mount_x" value="${plate_center_x}"/>
+  <xacro:property name="rear_piper_mount_x" value="${-plate_center_x}"/>
+
+  <!-- base_link is the single dynamic root because the existing Bunker/EKF
+       contract publishes odom -> base_link.  The CAD geometry is lifted from
+       its exported origin so base_link remains on the ground plane. -->
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 ${base_link_height}" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://bunker_dual_piper_nav2/meshes/bunker/base_link.STL"/>
+      </geometry>
+      <material name="bunker_grey"><color rgba="0.45 0.45 0.45 1"/></material>
+    </visual>
+    <!-- Primitive collision keeps Nav2/RViz responsive; the visual mesh remains exact. -->
+    <collision>
+      <origin xyz="0.013088 0 ${base_link_height-0.108839}" rpy="0 0 0"/>
+      <geometry><box size="0.692884 0.564000 0.330715"/></geometry>
+    </collision>
+  </link>
+
+  <!-- REP-105 ground projection alias.  It is a child so no second TF parent
+       competes with the existing odom -> base_link publisher. -->
+  <link name="base_footprint"/>
+  <joint name="base_link_to_base_footprint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="base_footprint"/>
+  </joint>
+
+  <!-- The upper-frame link origin lies on the underside of both 17 mm plates. -->
+  <joint name="upper_frame_joint" type="fixed">
+    <origin xyz="0 0 ${plate_bottom_height}" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="upper_frame_link"/>
+  </joint>
+
+  <link name="upper_frame_link">
+    <visual>
+      <!-- Frame.stl is millimetres: raw +Y becomes ROS +X and raw +X becomes ROS -Y. -->
+      <origin xyz="-0.220319 0.115000 -0.320000" rpy="0 0 ${-robot_pi/2}"/>
+      <geometry>
+        <mesh filename="package://bunker_dual_piper_nav2/meshes/upper_frame/Frame.stl"
+              scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="frame_black"><color rgba="0.08 0.09 0.10 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -0.1675" rpy="0 0 0"/>
+      <geometry><box size="0.80205 0.266 0.335"/></geometry>
+    </collision>
+  </link>
+
+  <xacro:macro name="mounting_plate" params="name x">
+    <joint name="${name}_mounting_plate_joint" type="fixed">
+      <origin xyz="${x} 0 0" rpy="0 0 0"/>
+      <parent link="upper_frame_link"/>
+      <child link="${name}_mounting_plate_link"/>
+    </joint>
+    <link name="${name}_mounting_plate_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://bunker_dual_piper_nav2/meshes/mounting/piper_mounting_plate.STL"
+                scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="plate_black"><color rgba="0.04 0.04 0.05 1"/></material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 ${plate_thickness/2}" rpy="0 0 0"/>
+        <geometry><box size="0.100 0.260 ${plate_thickness}"/></geometry>
+      </collision>
+    </link>
+  </xacro:macro>
+
+  <xacro:mounting_plate name="front" x="${front_piper_mount_x}"/>
+  <xacro:mounting_plate name="rear" x="${rear_piper_mount_x}"/>
+
+  <!-- Front and rear PiPER bases use the two physical mounting plates. The
+       front base uses 180 degree yaw, and the rear arm keeps its rear-facing yaw. -->
+  <xacro:piper_arm prefix="front_piper_" parent="front_mounting_plate_link"
+                    mount_xyz="0 0 ${plate_thickness}"
+                    mount_rpy="$(arg front_piper_mount_rpy)"
+                    legacy="$(arg front_piper_legacy)"/>
+  <xacro:piper_arm prefix="rear_piper_" parent="rear_mounting_plate_link"
+                    mount_xyz="0 0 ${plate_thickness}"
+                    mount_rpy="$(arg rear_piper_mount_rpy)"
+                    legacy="$(arg rear_piper_legacy)"/>
+
+  <!-- Preview-only camera visuals. The calibrated joint is directly from
+       flange to the color optical frame, with no TCP or mount intermediary.
+       The physical camera body is then hung under a camera_link so the mesh
+       does not inherit the optical-frame axis convention. -->
+  <xacro:macro name="direct_optical_camera" params="prefix parent xyz rpy">
+    <link name="${prefix}color_optical_frame"/>
+    <joint name="${prefix}flange_to_color_optical" type="fixed">
+      <origin xyz="${xyz}" rpy="${rpy}"/>
+      <parent link="${parent}"/>
+      <child link="${prefix}color_optical_frame"/>
+    </joint>
+    <link name="${prefix}depth_optical_frame"/>
+    <joint name="${prefix}color_optical_to_depth_optical" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <parent link="${prefix}color_optical_frame"/>
+      <child link="${prefix}depth_optical_frame"/>
+    </joint>
+    <link name="${prefix}link">
+      <visual>
+        <origin xyz="0 0.02 0" rpy="1.5707963267948966 0 1.5707963267948966"/>
+        <geometry><mesh filename="package://realsense2_description/meshes/d435.dae"/></geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 -0.0175 0" rpy="0 0 0"/>
+        <geometry><box size="0.02505 0.09 0.025"/></geometry>
+      </collision>
+    </link>
+    <joint name="${prefix}color_optical_to_link" type="fixed">
+      <origin xyz="0.05 0 0" rpy="1.5707963267948966 -1.5707963267948966  0"/>
+      <parent link="${prefix}color_optical_frame"/>
+      <child link="${prefix}link"/>
+    </joint>
+  </xacro:macro>
+  <xacro:direct_optical_camera prefix="front_camera_" parent="front_piper_flange_link"
+                                xyz="$(arg front_camera_xyz)" rpy="$(arg front_camera_rpy)"/>
+  <xacro:direct_optical_camera prefix="rear_camera_" parent="rear_piper_flange_link"
+                                xyz="$(arg rear_camera_xyz)" rpy="$(arg rear_camera_rpy)"/>
+
+  <!-- Simulation-only running gear and sensors.  Hardware launches leave the
+       argument false, so these links and Gazebo plugins cannot affect the
+       physical robot description. -->
+  <xacro:if value="$(arg simulation)">
+    <xacro:property name="sim_wheel_radius" value="0.12"/>
+    <xacro:property name="sim_wheel_width" value="0.07"/>
+    <xacro:property name="sim_wheel_y" value="0.27"/>
+
+    <xacro:macro name="sim_wheel" params="side y">
+      <link name="${side}_wheel_link">
+        <inertial>
+          <mass value="2.0"/>
+          <inertia ixx="0.02" ixy="0" ixz="0" iyy="0.02" iyz="0" izz="0.02"/>
+        </inertial>
+        <visual>
+          <origin rpy="${robot_pi/2} 0 0"/>
+          <geometry><cylinder radius="${sim_wheel_radius}" length="${sim_wheel_width}"/></geometry>
+          <material name="sim_track_black"><color rgba="0.03 0.03 0.03 1"/></material>
+        </visual>
+        <collision>
+          <origin rpy="${robot_pi/2} 0 0"/>
+          <geometry><cylinder radius="${sim_wheel_radius}" length="${sim_wheel_width}"/></geometry>
+        </collision>
+      </link>
+      <joint name="${side}_wheel_joint" type="continuous">
+        <origin xyz="0 ${y} ${sim_wheel_radius}" rpy="0 0 0"/>
+        <parent link="base_link"/>
+        <child link="${side}_wheel_link"/>
+        <axis xyz="0 1 0"/>
+        <dynamics damping="0.1" friction="0.1"/>
+      </joint>
+    </xacro:macro>
+
+    <xacro:sim_wheel side="left" y="${sim_wheel_y}"/>
+    <xacro:sim_wheel side="right" y="${-sim_wheel_y}"/>
+
+    <gazebo reference="base_link">
+      <mu1>0.8</mu1><mu2>0.8</mu2>
+    </gazebo>
+    <gazebo reference="left_wheel_link"><mu1>2.0</mu1><mu2>2.0</mu2></gazebo>
+    <gazebo reference="right_wheel_link"><mu1>2.0</mu1><mu2>2.0</mu2></gazebo>
+
+    <gazebo>
+      <plugin filename="libignition-gazebo-diff-drive-system.so"
+              name="ignition::gazebo::systems::DiffDrive">
+        <left_joint>left_wheel_joint</left_joint>
+        <right_joint>right_wheel_joint</right_joint>
+        <wheel_separation>${sim_wheel_y * 2.0}</wheel_separation>
+        <wheel_radius>${sim_wheel_radius}</wheel_radius>
+        <odom_publish_frequency>50</odom_publish_frequency>
+        <topic>$(arg sim_cmd_vel_topic)</topic>
+        <odom_topic>$(arg sim_odom_topic)</odom_topic>
+        <tf_topic>$(arg sim_tf_topic)</tf_topic>
+        <frame_id>odom</frame_id>
+        <child_frame_id>base_link</child_frame_id>
+      </plugin>
+      <plugin filename="libignition-gazebo-joint-state-publisher-system.so"
+              name="ignition::gazebo::systems::JointStatePublisher">
+        <joint_name>left_wheel_joint</joint_name>
+        <joint_name>right_wheel_joint</joint_name>
+      </plugin>
+    </gazebo>
+
+    <!-- Keep the existing standalone YOLO RGB-D topic contract during this
+         simulation milestone.  Real hardware later uses the integrated
+         /front_camera namespace.  Both simulated sensors share the same link
+         and intrinsics, so the depth image is already color-aligned. -->
+    <gazebo reference="front_camera_link">
+      <sensor name="front_wrist_rgb_sim" type="camera">
+        <always_on>true</always_on>
+        <visualize>true</visualize>
+        <update_rate>15</update_rate>
+        <topic>/camera/camera/color/image_raw</topic>
+        <gz_frame_id>front_camera_color_optical_frame</gz_frame_id>
+        <camera>
+          <horizontal_fov>1.2217</horizontal_fov>
+          <image><width>640</width><height>480</height><format>R8G8B8</format></image>
+          <clip><near>0.1</near><far>30.0</far></clip>
+        </camera>
+      </sensor>
+      <sensor name="front_wrist_aligned_depth_sim" type="depth_camera">
+        <always_on>true</always_on>
+        <visualize>false</visualize>
+        <update_rate>15</update_rate>
+        <topic>/camera/camera/aligned_depth_to_color/image_raw</topic>
+        <gz_frame_id>front_camera_color_optical_frame</gz_frame_id>
+        <camera>
+          <horizontal_fov>1.2217</horizontal_fov>
+          <image>
+            <width>640</width>
+            <height>480</height>
+            <format>R_FLOAT32</format>
+          </image>
+          <clip><near>0.1</near><far>30.0</far></clip>
+        </camera>
+      </sensor>
+    </gazebo>
+  </xacro:if>
+</robot>

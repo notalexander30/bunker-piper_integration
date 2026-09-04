@@ -1,0 +1,20 @@
+piper_navigation_pose:
+  ros__parameters:
+    # Captured 2026-07-24 from live PiPER feedback. This is a provisional
+    # navigation pose: visually confirm it is the intended forward camera pose
+    # before ever setting trigger_on_start/allow_motion true.
+    joint_names: [joint1, joint2, joint3, joint4, joint5, joint6]
+    joint_positions: [-1.6, 0.0, 0.0, 0.0, 0.0, 0.0]
+    feedback_topic: /piper/feedback/joint_states
+    # The official driver's joint-state path preserves named joint targets.
+    command_topic: /piper/control/joint_states
+    arm_enable_service: /piper/enable_agx_arm
+    control_gate_service: /piper/control_enable
+    position_tolerance_rad: 0.035
+    motion_timeout_sec: 30.0
+    # Never leave an opted-in motion manager waiting indefinitely if its CAN
+    # driver, feedback, or services are unavailable.
+    startup_timeout_sec: 20.0
+    # Both must be explicitly changed to true to send a physical arm command.
+    trigger_on_start: false
+    allow_motion: false

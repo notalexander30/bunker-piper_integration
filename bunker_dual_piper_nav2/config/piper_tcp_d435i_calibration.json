@@ -1,0 +1,32 @@
+{
+  "parent_frames": [
+    "front_piper_flange_link",
+    "rear_piper_flange_link"
+  ],
+  "child_mount_frames": [
+    "front_camera_color_optical_frame",
+    "rear_camera_color_optical_frame"
+  ],
+  "position": [
+    -0.03325362536889407,
+    -0.04784194427852743,
+    0.08630445414919316
+  ],
+  "orientation": [
+    -0.0400543683846712,
+    -0.0020645358673945235,
+    0.011914828710571071,
+    0.9991243276598539
+  ],
+  "rpy": [
+    -0.08017405150425999,
+    -0.0031709794581423934,
+    0.023976595541682157
+  ],
+  "source_transform": "flange_link_to_camera_color_optical_frame",
+  "units": {
+    "position": "meters",
+    "rpy": "radians",
+    "orientation": "quaternion_xyzw"
+  }
+}

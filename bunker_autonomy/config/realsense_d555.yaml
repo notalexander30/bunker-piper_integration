@@ -1,0 +1,32 @@
+# RealSense D555 settings for the ARM64 ROS package.
+#
+# The normal launch option is kept for compatibility. On this ARM64 build,
+# librealsense reports the filter name as "Point Cloud (NEON)", which ROS
+# sanitizes to the pointcloud__neon_ parameter namespace.
+enable_depth: true
+enable_color: true
+enable_infra: false
+enable_infra1: false
+enable_infra2: false
+enable_gyro: false
+enable_accel: false
+enable_motion: false
+# The D555 on Jetson can re-enumerate incompletely when librealsense performs
+# its own startup reset, leaving UVC controls with timeout/broken-pipe errors.
+# Use the explicit realsense_usb_recover command only when frame timeouts occur.
+initial_reset: false
+enable_sync: false
+align_depth.enable: false
+# Keep the ARM point-cloud conversion and RViz rendering responsive. The raw
+# depth stream remains suitable for the autonomy depth monitor at this rate.
+depth_module.depth_profile: "640x360x15"
+rgb_camera.color_profile: "640x360x15"
+decimation_filter.enable: false
+decimation_filter.filter_magnitude: 2
+pointcloud.enable: true
+pointcloud__neon_.enable: true
+pointcloud__neon_.allow_no_texture_points: true
+pointcloud.stream_filter: 1
+pointcloud.stream_index_filter: 0
+pointcloud__neon_.stream_filter: 1
+pointcloud__neon_.stream_index_filter: 0

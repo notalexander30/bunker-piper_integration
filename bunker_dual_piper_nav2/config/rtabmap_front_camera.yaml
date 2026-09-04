@@ -1,0 +1,80 @@
+front_rgbd_sync:
+  ros__parameters:
+    approx_sync: true
+    approx_sync_max_interval: 0.08
+    topic_queue_size: 30
+    sync_queue_size: 30
+    qos: 1
+    qos_camera_info: 1
+    depth_scale: 1.0
+
+rear_rgbd_sync:
+  ros__parameters:
+    approx_sync: true
+    approx_sync_max_interval: 0.08
+    topic_queue_size: 30
+    sync_queue_size: 30
+    qos: 1
+    qos_camera_info: 1
+    depth_scale: 1.0
+
+rgbdx_sync:
+  ros__parameters:
+    approx_sync: true
+    approx_sync_max_interval: 0.08
+    topic_queue_size: 30
+    sync_queue_size: 30
+    qos: 1
+    rgbd_cameras: 2
+
+rtabmap:
+  ros__parameters:
+    frame_id: base_link
+    map_frame_id: map
+    odom_frame_id: odom
+    publish_tf: true
+    subscribe_rgb: false
+    subscribe_depth: false
+    subscribe_rgbd: true
+    rgbd_cameras: 0
+    subscribe_scan: false
+    subscribe_scan_cloud: false
+    subscribe_odom_info: false
+    approx_sync: true
+    topic_queue_size: 30
+    sync_queue_size: 30
+    qos_image: 1
+    qos_camera_info: 1
+    qos_odom: 1
+    wait_for_transform: 0.25
+    use_sim_time: false
+    map_always_update: true
+    "Rtabmap/DetectionRate": "3.0"
+    # Required for dual RGB-D cameras with this RTAB-Map binary. The installed
+    # build does not include OpenGV, so multi-camera 3D->2D PnP is unavailable.
+    "Vis/EstimationType": "0"
+    "RGBD/LinearUpdate": "0.08"
+    "RGBD/AngularUpdate": "0.08"
+    "RGBD/OptimizeFromGraphEnd": "false"
+    "RGBD/NeighborLinkRefining": "true"
+    "RGBD/ProximityBySpace": "true"
+    "RGBD/ProximityPathMaxNeighbors": "10"
+    "RGBD/OptimizeMaxError": "3.0"
+    "Reg/Force3DoF": "true"
+    # Match the front-camera standalone mapping behavior: tracking loss or
+    # poor rear viewpoint should pause updates, not reset odometry/session.
+    "Odom/ResetCountdown": "0"
+    "Mem/IncrementalMemory": "true"
+    "Mem/InitWMWithAllNodes": "false"
+    "Mem/BinDataKept": "true"
+    "Mem/SaveDepth16Format": "true"
+    "Grid/Sensor": "1"
+    "Grid/3D": "false"
+    "Grid/CellSize": "0.05"
+    "Grid/RangeMin": "0.25"
+    "Grid/RangeMax": "6.0"
+    "Grid/MaxGroundHeight": "0.10"
+    "Grid/MaxObstacleHeight": "1.80"
+    # Ray-trace depth returns so visible floor is marked free (white in RViz)
+    # and obstacles are marked occupied (black), matching the Nav2 map view.
+    "Grid/RayTracing": "true"

@@ -1,0 +1,22 @@
+# Default pose before/after PiPER manipulation.
+# The legacy API names this file's operation "go-home"; use
+# "manipulation pose" in user-facing commands to avoid confusing it with
+# the Bunker home navigation landmark.
+pose_name: manipulation_pose
+captured_at_ros_time:
+  sec: 0
+  nanosec: 0
+source_topic: configured_default
+source_type: sensor_msgs/msg/JointState
+arm:
+  arm_type: piper_x
+  effector_type: none
+  can_port: front_can2_rear_can3
+moveit:
+  namespace: /front_piper
+  planning_group: arm
+  tip_link: front_piper_flange_link
+  tcp_offset: [0.0, 0.0, 0.1425, 0.0, 0.0, 0.0]
+joint_state:
+  names: [joint1, joint2, joint3, joint4, joint5, joint6, gripper]
+  positions_rad: [0.0, 0.36, -0.86, 0.56, 0.0, 0.0, 0.0]

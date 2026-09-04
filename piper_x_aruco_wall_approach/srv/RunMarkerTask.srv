@@ -1,0 +1,13 @@
+string mode
+bool execute
+float64 pre_clearance_m
+float64 final_clearance_m
+float64 retract_distance_m
+float64 final_velocity_scaling
+bool retract_after
+---
+bool success
+string stage
+string message
+bool contact_confirmed
+string completion_type

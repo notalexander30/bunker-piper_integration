@@ -1,0 +1,45 @@
+# Default home pose for front and rear PiPER-X arms.
+# This is the default front-arm home pose. Runtime saves in /ros2_ws/config
+# override it after the operator teaches a different pose.
+pose_name: home
+captured_at_ros_time:
+  sec: 0
+  nanosec: 0
+source_topic: configured_default
+source_type: sensor_msgs/msg/JointState
+arm:
+  arm_type: piper_x
+  effector_type: none
+  can_port: front_can2_rear_can3
+moveit:
+  namespace: /front_piper
+  planning_group: arm
+  tip_link: front_piper_flange_link
+  tcp_offset: [0.0, 0.0, 0.1425, 0.0, 0.0, 0.0]
+joint_state:
+  names:
+    - joint1
+    - joint2
+    - joint3
+    - joint4
+    - joint5
+    - joint6
+    - gripper
+  positions_rad:
+    - 0.0
+    - 0.36
+    # PiPER-X joint3 has an upper limit of 0 rad; use the matching negative
+    # elbow-side value rather than sending an impossible positive target.
+    - -0.86
+    - 0.56
+    - 0.0
+    - 0.0
+    - 0.0
+  velocities:
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
