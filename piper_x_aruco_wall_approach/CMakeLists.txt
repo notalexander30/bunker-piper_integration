@@ -66,6 +66,7 @@ install(PROGRAMS
   scripts/piper_touch_marker_api.py
   scripts/piper_touch_marker_client.py
   scripts/piper_x_control_gate.py
+  scripts/openclaw_gateway.py
   scripts/publish_integrated_moveit_semantic.py
   scripts/publish_handeye_tf.py
   DESTINATION lib/${PROJECT_NAME}

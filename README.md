@@ -14,7 +14,8 @@ The maintained operator runbook is:
 | `bunker_dual_piper_nav2/` | Combined Bunker + front/rear PiPER + D435i URDF/xacro package, meshes, dual PiPER launch files, Nav2/RTAB-Map configs, and RViz previews. |
 | `bunker_autonomy/` | Navigation helper nodes, safety monitors, landmark navigation, clicked-goal utilities, and optional Nav2-to-manipulation handoff trigger. |
 | `piper_x_aruco_wall_approach/` | Front PiPER-X MoveIt/ArUco wall approach, touch services, HTTP API bridge on `127.0.0.1:8892`, and tests. |
-| `docs/` | GitHub-facing architecture and visualization notes. |
+| `docker/` | Example Docker image and compose file for a ROS 2 Humble Nav-Man development container. |
+| `docs/` | GitHub-facing architecture, CAN discovery, gateway, and visualization notes. |
 
 ## Current Nav-Man Design
 
@@ -28,7 +29,8 @@ flowchart LR
     T8["Terminal 8\nArUco detector"]
     T9["Terminal 9\nMarker search"]
     T10["Terminal 10\nWall approach/touch"]
-    T11["Terminal 11\nHTTP API\n127.0.0.1:8892"]
+    T11["Terminal 11\nTouch API\n127.0.0.1:8892"]
+    T12["OpenClaw Gateway\n127.0.0.1:8893"]
   end
 
   T1 -->|/robot_description /tf /tf_static /joint_states| T4
@@ -39,20 +41,23 @@ flowchart LR
   T9 --> T10
   T4 -->|/front_piper/control/joint_states| T10
   T10 --> T11
+  T11 --> T12
 ```
 
 Key rule: only one process owns each hardware driver, camera, robot description, TF tree, odometry source, RTAB-Map instance, Nav2 stack, and API port. The Nav-Man startup keeps Trystan's terminals as the hardware/navigation owner and layers Iliyas' manipulation services on top of those existing topics.
 
 ## Hardware Defaults
 
-| Device | Default |
+| Device | Public setup default |
 |---|---|
-| Front PiPER | `can2`, 1 Mbit/s |
-| Rear PiPER | `can3`, 1 Mbit/s |
-| Bunker base | `can4`, 500 kbit/s |
-| Front D435i | Serial `243322074578` |
+| Front PiPER | Discover first, then pass the resolved `canX`, 1 Mbit/s |
+| Rear PiPER | Discover first, then pass the resolved `canX`, 1 Mbit/s |
+| Bunker base | Discover first, then pass the resolved `canX`, 500 kbit/s |
+| Front D435i | Discover first with `rs-enumerate-devices`, then pass the serial |
 | Rear D435i | Disabled in the simplified startup |
 | ROS domain | `ROS_DOMAIN_ID=173`, `ROS_LOCALHOST_ONLY=1` |
+
+See [CAN discovery](docs/can_discovery.md) before starting hardware. The current lab robot may use `can2`/`can3`/`can4`, but public users should not assume `canN` order is stable.
 
 ## Quick Build
 
@@ -66,6 +71,8 @@ source install/setup.bash
 ```
 
 The real robot workflow runs inside the `trystan-bunker-navigation` Docker container. Follow the terminal-by-terminal commands in [NAV_MAN_INTEGRATION_STARTUP.md](bunker_slam_bringup/NAV_MAN_INTEGRATION_STARTUP.md).
+
+For a reproducible development container, see [Docker setup](docker/README.md).
 
 ## URDF And RViz Preview
 
@@ -91,13 +98,14 @@ See [URDF visualization](docs/urdf_visualization.md) for the frame map and RViz 
 - Physical PiPER movement requires the explicit `allow_piper_motion:=true` argument in the launch path that supports it.
 - Keep OpenClaw/Agent Server disabled until the lower-level `8892` manual API flow is proven on the robot.
 - Validate CAN adapter labels and front/rear PiPER assignment before commanding motion.
+- The lower-level PiPER touch API is documented on `127.0.0.1:8892`; the OpenClaw gateway is documented on `127.0.0.1:8893`. See [OpenClaw gateway](docs/openclaw_gateway.md).
 
 ## Questions Before Adding More
 
 These are the remaining repo decisions that need operator input:
 
-1. Should this repo include only the four integration packages, or should it also vendor the full `ABot-Claw-piperX`, `agx_arm_ros`, and hardware SDK packages?
-2. Should runtime maps (`*.pgm`, `*.yaml`) be committed as sample maps, or kept out because they are site-specific?
-3. Do you want a Dockerfile/compose file for recreating `trystan-bunker-navigation`, or should this repo assume that container already exists?
-4. Which camera serials and CAN adapter serial-to-name rules are final enough to document as defaults?
-5. Should OpenClaw/Agent Server stay documented as future work, or should its launch/service files be added now behind a disabled-by-default mode?
+1. Should this repo vendor the hardware SDK packages directly, or keep them as external dependencies?
+2. Which exact upstream branches/tags should be used for `agx_arm_ros`, `ugv_sdk`, RealSense, ArUco, and OpenClaw?
+3. Should the `8893` OpenClaw gateway become a real ROS/package entry point in this repo, or stay documented until the gateway implementation is ready to publish?
+4. Which sample map should be the default map for public demos?
+5. Do you want GitHub Actions added for lint/build checks?

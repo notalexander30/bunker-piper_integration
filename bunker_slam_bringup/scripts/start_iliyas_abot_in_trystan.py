@@ -321,6 +321,18 @@ def make_commands(args: argparse.Namespace) -> dict[str, str]:
             "--command-joint-prefix front_piper_",
         ]
     )
+    openclaw_gateway = " ".join(
+        [
+            ROS_ENV,
+            "export OPENCLAW_GATEWAY_HOST=127.0.0.1;",
+            "export OPENCLAW_GATEWAY_PORT=8893;",
+            "export PIPER_TOUCH_API_URL=http://127.0.0.1:8892;",
+            "ros2 run piper_x_aruco_wall_approach openclaw_gateway.py",
+            "--host 127.0.0.1",
+            "--port 8893",
+            "--api-base http://127.0.0.1:8892",
+        ]
+    )
     watchdogs = " ".join(
         [
             ROS_ENV,
@@ -347,8 +359,9 @@ def make_commands(args: argparse.Namespace) -> dict[str, str]:
         "t9_marker_search": search_marker,
         "t10_wall_approach": wall_approach,
         "t11_api_8892": marker_api,
-        "t12_watchdogs": watchdogs,
-        "t13_frontier_mrtsp": frontier_mrtsp,
+        "t12_openclaw_8893": openclaw_gateway,
+        "t13_watchdogs": watchdogs,
+        "t14_frontier_mrtsp": frontier_mrtsp,
     }
 
 

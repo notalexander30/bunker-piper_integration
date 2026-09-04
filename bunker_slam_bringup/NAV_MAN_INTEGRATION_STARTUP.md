@@ -38,10 +38,10 @@ RViz windows: one Nav/mapping RViz, one front PiPER MoveIt RViz
 Hardware map:
 
 ```text
-front PiPER: can2, 1 Mbit/s
-rear PiPER:  can3, 1 Mbit/s
-Bunker:      can4, 500 kbit/s
-front D435i: serial 243322074578
+front PiPER: discover first, then pass resolved canX, 1 Mbit/s
+rear PiPER:  discover first, then pass resolved canX, 1 Mbit/s
+Bunker:      discover first, then pass resolved canX, 500 kbit/s
+front D435i: discover first with rs-enumerate-devices, then pass serial
 rear D435i:  disabled in the current simplified startup
 Odometry:    raw Bunker `/odom`; no EKF in Terminal 1
 H30/YESENSE: disabled in the current simplified startup
@@ -61,18 +61,19 @@ RGB is still required because ArUco uses `/front_camera/color/image_raw`.
 Aligned depth and point cloud are required because RTAB-Map and the
 wall/touch/API stack use depth and `/front_camera/depth/color/points`.
 
-The current integration passes these CAN arguments:
+The current integration passes CAN arguments in this shape:
 
 ```bash
-arm_can:=can2 \
-bunker_can:=can4 \
-rear_piper_can:=can3 \
-front_piper_can:=can2
+arm_can:=FRONT_PIPER_CANX \
+bunker_can:=BUNKER_CANX \
+rear_piper_can:=REAR_PIPER_CANX \
+front_piper_can:=FRONT_PIPER_CANX
 ```
 
-That means the current PiPER bringup expects all three external USB-CAN links:
-`can2` for the front PiPER, `can3` for the rear PiPER, and `can4` for the Bunker.
-The onboard `can0`/`can1` interfaces may exist but are not used by this startup.
+Resolve the `canX` names before launch. The current lab robot has used
+`can2` for the front PiPER, `can3` for the rear PiPER, and `can4` for the
+Bunker, but public users should treat those as examples only because Linux
+`canN` assignment can change.
 
 ## Integration with Trystan's work
 
@@ -93,8 +94,8 @@ Current ownership split:
 
 | Component | Trystan/Nav-Man starts | Iliyas/ABot starts | Integration rule |
 |---|---|---|---|
-| PiPER-X hardware drivers | Yes, Terminal 1 starts front PiPER on `can2` and rear PiPER on `can3` | No duplicate PiPER driver | Iliyas subscribes to `/joint_states` and commands the front trajectory bridge |
-| Bunker driver | Yes, Terminal 1 starts Bunker on `can4` | No | Bunker owns raw `/odom` in this mode |
+| PiPER-X hardware drivers | Yes, Terminal 1 starts front/rear PiPER on discovered `canX` links | No duplicate PiPER driver | Iliyas subscribes to `/joint_states` and commands the front trajectory bridge |
+| Bunker driver | Yes, Terminal 1 starts Bunker on discovered `canX` link | No | Bunker owns raw `/odom` in this mode |
 | RealSense cameras | Yes, Terminal 1 starts only the front D435i node in the current simplified startup | No duplicate camera node | Iliyas uses `/front_camera/color/image_raw`, `/front_camera/color/camera_info`, and `/front_camera/depth/color/points` |
 | Robot URDF/TF | Yes, Terminal 1 publishes `/robot_description`, `/tf`, and `/tf_static` | No duplicate robot-state publisher or generic camera alias TF | MoveIt and Iliyas use Trystan's real front PiPER/camera frames |
 | Joint states | Yes, Terminal 1 publishes integrated `/joint_states` with prefixed front/rear PiPER joints | No separate joint-state adapter in this integrated mode | API normalizes `front_piper_joint1..6` to raw `joint1..6` internally |
@@ -104,7 +105,7 @@ Current ownership split:
 | ArUco detector | Optional debug in Trystan Terminal 1; normal Nav-Man detector is Terminal 8 | Yes, Terminal 8 starts the manipulation ArUco detector | It subscribes to Trystan's front camera topics |
 | Search/approach/touch nodes | No | Yes, Terminal 9 and Terminal 10 | They use Trystan's camera, point cloud, TF, joint states, and MoveIt |
 | HTTP API | No | Yes, Terminal 11 exposes lower-level API on `127.0.0.1:8892` | API calls ROS services/actions inside the same Docker |
-| Agent Server / OpenClaw | No in the current Nav-Man startup | Not started by default | Keep disabled until the lower-level 8892/manual flow is proven clean |
+| OpenClaw gateway | No hardware ownership | Optional gateway on `127.0.0.1:8893` | Gateway calls `8892`; it must not own ROS hardware or TF |
 
 Slide version:
 
@@ -115,14 +116,14 @@ Iliyas starts:
 - marker search service
 - wall approach / touch services
 - lower-level HTTP API on 127.0.0.1:8892
-- optional OpenClaw / Agent Server later, not in current startup
+- optional OpenClaw gateway on 127.0.0.1:8893, calling 8892 only
 
 Trystan starts:
 - trystan-bunker-navigation Docker
 - Terminal 1 hardware owner
-- front PiPER driver on can2
-- rear PiPER driver on can3
-- Bunker driver on can4
+- front PiPER driver on discovered `canX`
+- rear PiPER driver on discovered `canX`
+- Bunker driver on discovered `canX`
 - front RealSense camera node only
 - combined robot URDF, /robot_description, /tf, /tf_static
 - integrated /joint_states
@@ -393,40 +394,40 @@ for n in /sys/class/net/can*; do
 done
 ```
 
-Expected:
+Expected shape:
 
 ```text
-front PiPER  can2  1000000 bit/s
-rear PiPER   can3  1000000 bit/s
-Bunker       can4  500000 bit/s
+front PiPER  canX  1000000 bit/s
+rear PiPER   canY  1000000 bit/s
+Bunker       canZ  500000 bit/s
 ```
 
 Configure and validate all Nav-Man CAN links:
 
 ```bash
-ros2 run bunker_slam_bringup configure_can.sh can2 can4 can3
-ip -details -statistics link show can2
-ip -details -statistics link show can3
-ip -details -statistics link show can4
+ros2 run bunker_slam_bringup configure_can.sh FRONT_PIPER_CANX BUNKER_CANX REAR_PIPER_CANX
+ip -details -statistics link show FRONT_PIPER_CANX
+ip -details -statistics link show REAR_PIPER_CANX
+ip -details -statistics link show BUNKER_CANX
 ```
 
 Check passive frames:
 
 ```bash
-timeout 3 candump -L can2
-timeout 3 candump -L can3
-timeout 3 candump -L can4
+timeout 3 candump -L FRONT_PIPER_CANX
+timeout 3 candump -L REAR_PIPER_CANX
+timeout 3 candump -L BUNKER_CANX
 ```
 
 Expected:
 
 ```text
-can2 is UP at 1000000 bit/s
-can3 is UP at 1000000 bit/s
-can4 is UP at 500000 bit/s
-can2 has front PiPER frames
-can3 has rear PiPER frames
-can4 has Bunker frames
+FRONT_PIPER_CANX is UP at 1000000 bit/s
+REAR_PIPER_CANX is UP at 1000000 bit/s
+BUNKER_CANX is UP at 500000 bit/s
+FRONT_PIPER_CANX has front PiPER frames
+REAR_PIPER_CANX has rear PiPER frames
+BUNKER_CANX has Bunker frames
 ```
 
 Check cameras:
@@ -437,15 +438,15 @@ lsusb | grep -i -E 'intel|realsense|8086'
 ls -l /dev/video*
 ```
 
-Expected RealSense serials:
+Expected shape:
 
 ```text
-243322074578
-261222077434
+FRONT_CAMERA_SERIAL
+REAR_CAMERA_SERIAL
 ```
 
-If `can3` does not exist or rear PiPER firmware is not publishing yet, use the
-front-only fallback mode until the rear arm is fixed.
+If the rear PiPER `canX` does not exist or rear PiPER firmware is not
+publishing yet, use the front-only fallback mode until the rear arm is fixed.
 
 ## Mode 4: Full automatic tmux startup
 
@@ -477,8 +478,9 @@ t8_aruco             integrated SRDF bridge plus ArUco ID 6 detector
 t9_marker_search     /search_marker service
 t10_wall_approach    /run_wall_approach and /run_marker_task services
 t11_api_8892         HTTP API on 127.0.0.1:8892
-t12_watchdogs        live watchdog/source monitor for Nav2 mux, safety, camera
-t13_frontier_mrtsp   upstream frontier_exploration_ros2 cold-idle explorer
+t12_openclaw_8893    optional OpenClaw gateway on 127.0.0.1:8893
+t13_watchdogs        live watchdog/source monitor for Nav2 mux, safety, camera
+t14_frontier_mrtsp   upstream frontier_exploration_ros2 cold-idle explorer
 ```
 
 The MoveIt RViz planning workspace box is intentionally small:
@@ -1098,6 +1100,37 @@ Check:
 
 ```bash
 curl -s http://127.0.0.1:8892/health | python3 -m json.tool
+```
+
+### Terminal 12: OpenClaw gateway on 8893
+
+Use this layer for higher-level OpenClaw or agent requests. It should forward to
+the lower-level `8892` API and must not start another PiPER driver, camera,
+robot-state-publisher, MoveIt stack, RTAB-Map instance, Nav2 instance, or TF
+branch.
+
+```bash
+cd /ros2_ws
+source /opt/ros/humble/setup.bash
+source /ros2_ws/install/setup.bash
+export ROS_DOMAIN_ID=173
+export ROS_LOCALHOST_ONLY=1
+export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+export OPENCLAW_GATEWAY_HOST=127.0.0.1
+export OPENCLAW_GATEWAY_PORT=8893
+export PIPER_TOUCH_API_URL=http://127.0.0.1:8892
+
+ros2 run piper_x_aruco_wall_approach openclaw_gateway.py \
+  --host 127.0.0.1 \
+  --port 8893 \
+  --api-base http://127.0.0.1:8892
+```
+
+Check:
+
+```bash
+curl -s http://127.0.0.1:8893/health | python3 -m json.tool
+curl -s http://127.0.0.1:8893/capabilities | python3 -m json.tool
 ```
 
 ### Manual controls
