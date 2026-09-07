@@ -1,10 +1,10 @@
 services:
-  trystan-bunker-navigation:
+  bunker-nav-man:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    image: trystan-bunker-navigation:nav-man
-    container_name: trystan-bunker-navigation
+    image: bunker-nav-man:humble
+    container_name: bunker-nav-man
     network_mode: host
     privileged: true
     ipc: host

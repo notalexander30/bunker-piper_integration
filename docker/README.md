@@ -1,6 +1,8 @@
 # Docker Setup
 
-This folder provides an example ROS 2 Humble development container for the public repo. It is meant to recreate the shape of the `trystan-bunker-navigation` environment, not to replace robot-specific driver installation and CAN/camera calibration.
+This folder provides the ROS 2 Humble development container for the Bunker
+Nav-Man workflow. It does not replace robot-specific CAN/camera discovery or
+physical calibration.
 
 ## Build
 
@@ -22,7 +24,7 @@ xhost +SI:localuser:root
 Start the container:
 
 ```bash
-docker compose -f docker/compose.yaml run --rm trystan-bunker-navigation
+docker compose -f docker/compose.yaml run --rm bunker-nav-man
 ```
 
 Inside the container:

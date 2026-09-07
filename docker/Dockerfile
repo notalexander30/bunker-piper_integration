@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
     python3-rosdep \
     python3-vcstool \
+    tmux \
     ros-humble-rmw-fastrtps-cpp \
     ros-humble-robot-state-publisher \
     ros-humble-joint-state-publisher \
@@ -24,6 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-xacro \
     ros-humble-tf2-ros \
     ros-humble-tf-transformations \
+    ros-humble-teleop-twist-keyboard \
     ros-humble-navigation2 \
     ros-humble-nav2-bringup \
     ros-humble-rtabmap-ros \

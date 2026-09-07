@@ -5,7 +5,7 @@ runbook for this package.
 
 Use `NAV_MAN_INTEGRATION_STARTUP.md` for the current one-container Nav-Man
 startup. It runs the front PiPER MoveIt/ArUco/API stack manually inside
-`trystan-bunker-navigation` and does not use the old automatic handoff service.
+`bunker-nav-man` and does not use the old automatic handoff service.
 
 The old split-runbook helper scripts were removed so operators do not follow
 stale procedures. The current workflow

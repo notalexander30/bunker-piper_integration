@@ -4,7 +4,7 @@ This is the single maintained runbook for running the Trystan Bunker/Nav2 stack
 and the Illiyas PiPER-X manipulation stack inside one Docker container:
 
 ```text
-trystan-bunker-navigation
+bunker-nav-man
 ```
 
 This file is intentionally written like `NAV2_FULL_SYSTEM_STARTUP.md`: each mode
@@ -23,15 +23,15 @@ They were removed. This file replaces them.
 ## Current design
 
 ```text
-Docker owner: trystan-bunker-navigation only
+Docker owner: bunker-nav-man only
 tmux session: 0
 ROS_DOMAIN_ID: 173
 ROS_LOCALHOST_ONLY: 1
 hardware owner: Terminal 1 only
 automatic handoff service: disabled
-manual manipulation/API calls: enabled
-PiPER control gate: open by default for API control
-physical PiPER motion gate: explicit allow_piper_motion argument
+manual manipulation/API calls: available but execution-gated
+PiPER control gate: disabled in automatic startup by default
+physical PiPER motion gate: explicit --allow-piper-motion launcher argument
 RViz windows: one Nav/mapping RViz, one front PiPER MoveIt RViz
 ```
 
@@ -119,7 +119,7 @@ Iliyas starts:
 - optional OpenClaw gateway on 127.0.0.1:8893, calling 8892 only
 
 Trystan starts:
-- trystan-bunker-navigation Docker
+- bunker-nav-man Docker
 - Terminal 1 hardware owner
 - front PiPER driver on discovered `canX`
 - rear PiPER driver on discovered `canX`
@@ -154,7 +154,7 @@ docker exec -it \
   -e DISPLAY=:1 \
   -e QT_X11_NO_MITSHM=1 \
   -e QT_QPA_PLATFORM=xcb \
-  trystan-bunker-navigation bash
+  bunker-nav-man bash
 ```
 
 Inside Docker, use this environment block in every manual terminal:
@@ -204,12 +204,12 @@ If you want one plain copy-paste `pkill` block that kills the whole Nav-Man
 stack without killing tmux, use this:
 
 ```bash
-pkill -TERM -f 'terminal1_sensors.launch.py|terminal2_robot.launch.py|terminal3_mapping.launch.py|nav2_bringup.launch.py|touch_marker_full_stack.launch.py|front_piper_description_bridge.py|front_piper_move_group_only.py|front_piper_moveit_tf_publisher.py|front_piper_moveit_rviz.py|front_piper_trajectory_bridge.py|start_iliyas_abot_in_trystan.py' || true
+pkill -TERM -f 'terminal1_sensors.launch.py|terminal2_robot.launch.py|terminal3_mapping.launch.py|nav2_bringup.launch.py|touch_marker_full_stack.launch.py|front_piper_description_bridge.py|front_piper_move_group_only.py|front_piper_moveit_tf_publisher.py|front_piper_moveit_rviz.py|front_piper_trajectory_bridge.py|start_nav_man_workflow.py|start_iliyas_abot_in_trystan.py' || true
 pkill -TERM -f 'realsense2_camera_node|rgbd_sync|rgbdx_sync|rtabmap|move_group|rviz2|agx_arm_ctrl_single|bunker_base_node|robot_state_publisher|joint_state_prefixer|joint_state_publisher|ekf_node|yesense_node_publisher|piper_navigation_pose|piper_x_joint_preset|search_marker_node|wall_approach_node|piper_touch_marker_api|aruco_ros|aruco_single|static_transform_publisher|depth_route_monitor_node|sensor_fusion_node|safety_monitor_node|cmd_vel_mux_node|nav2_cmd_vel_safety_mux|controller_server|planner_server|behavior_server|bt_navigator|waypoint_follower|velocity_smoother|smoother_server|lifecycle_manager' || true
 
 sleep 2
 
-pkill -KILL -f 'terminal1_sensors.launch.py|terminal2_robot.launch.py|terminal3_mapping.launch.py|nav2_bringup.launch.py|touch_marker_full_stack.launch.py|front_piper_description_bridge.py|front_piper_move_group_only.py|front_piper_moveit_tf_publisher.py|front_piper_moveit_rviz.py|front_piper_trajectory_bridge.py|start_iliyas_abot_in_trystan.py' || true
+pkill -KILL -f 'terminal1_sensors.launch.py|terminal2_robot.launch.py|terminal3_mapping.launch.py|nav2_bringup.launch.py|touch_marker_full_stack.launch.py|front_piper_description_bridge.py|front_piper_move_group_only.py|front_piper_moveit_tf_publisher.py|front_piper_moveit_rviz.py|front_piper_trajectory_bridge.py|start_nav_man_workflow.py|start_iliyas_abot_in_trystan.py' || true
 pkill -KILL -f 'realsense2_camera_node|rgbd_sync|rgbdx_sync|rtabmap|move_group|rviz2|agx_arm_ctrl_single|bunker_base_node|robot_state_publisher|joint_state_prefixer|joint_state_publisher|ekf_node|yesense_node_publisher|piper_navigation_pose|piper_x_joint_preset|search_marker_node|wall_approach_node|piper_touch_marker_api|aruco_ros|aruco_single|static_transform_publisher|depth_route_monitor_node|sensor_fusion_node|safety_monitor_node|cmd_vel_mux_node|nav2_cmd_vel_safety_mux|controller_server|planner_server|behavior_server|bt_navigator|waypoint_follower|velocity_smoother|smoother_server|lifecycle_manager' || true
 
 ros2 daemon stop
@@ -246,10 +246,10 @@ ros2 topic list | grep -E '^/(front_camera|front_rgbd_image)' || true
 ```
 
 If those processes are owned by Docker root from the host, run the same block
-inside `trystan-bunker-navigation`:
+inside `bunker-nav-man`:
 
 ```bash
-docker exec -it trystan-bunker-navigation bash
+docker exec -it bunker-nav-man bash
 ```
 
 Manual fallback cleanup:
@@ -373,8 +373,8 @@ If Docker dependencies changed, rebuild the image from the host:
 
 ```bash
 cd /home/dase-orin/ros2_ws
-docker compose build trystan-bunker-navigation
-docker compose up -d trystan-bunker-navigation
+docker compose -f docker/compose.yaml build bunker-nav-man
+docker compose -f docker/compose.yaml up -d bunker-nav-man
 ```
 
 Then re-enter Docker and source the environment again. Running ROS nodes do not
@@ -460,9 +460,15 @@ export ROS_DOMAIN_ID=173
 export ROS_LOCALHOST_ONLY=1
 export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 
-ros2 run bunker_slam_bringup start_iliyas_abot_in_trystan.py --replace
+ros2 run bunker_slam_bringup start_nav_man_workflow.py --replace \
+  --database-path /ros2_ws/maps/site.db
 tmux attach -t 0
 ```
+
+The database must already exist for the default `localization` mode. To create
+a new site database, use `--mapping-mode mapping --reset-database`. Automatic
+startup denies PiPER motion unless `--allow-piper-motion` is supplied after
+dry-run validation.
 
 Expected tmux windows:
 
@@ -512,11 +518,11 @@ Ctrl-b 5       t6_trajectory_bridge
 Ctrl-b 7       t8_aruco
 Ctrl-b 8       t9_marker_search
 Ctrl-b 9       t10_wall_approach
-Ctrl-b n       continue to t11_api_8892, t12_watchdogs, and t13_frontier_mrtsp
+Ctrl-b n       continue to t11_api_8892 through t14_frontier_mrtsp
 Ctrl-b d       detach but keep running
 ```
 
-`t13_frontier_mrtsp` does not move the robot on launch. It starts
+`t14_frontier_mrtsp` does not move the robot on launch. It starts
 `frontier_exploration_ros2_bunker.launch.py` with `autostart:=false` and waits
 for:
 
@@ -544,7 +550,8 @@ export ROS_DOMAIN_ID=173
 export ROS_LOCALHOST_ONLY=1
 export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 
-ros2 run bunker_slam_bringup start_iliyas_abot_in_trystan.py --replace --disable-rear-piper
+ros2 run bunker_slam_bringup start_nav_man_workflow.py --replace \
+  --disable-rear-piper --database-path /ros2_ws/maps/site.db
 tmux attach -t 0
 ```
 
@@ -2170,12 +2177,12 @@ export ROS_DOMAIN_ID=173
 export ROS_LOCALHOST_ONLY=1
 export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 
-pkill -TERM -f 'terminal1_sensors.launch.py|terminal2_robot.launch.py|terminal3_mapping.launch.py|nav2_bringup.launch.py|touch_marker_full_stack.launch.py|front_piper_description_bridge.py|front_piper_move_group_only.py|front_piper_moveit_tf_publisher.py|front_piper_moveit_rviz.py|front_piper_trajectory_bridge.py|start_iliyas_abot_in_trystan.py' || true
+pkill -TERM -f 'terminal1_sensors.launch.py|terminal2_robot.launch.py|terminal3_mapping.launch.py|nav2_bringup.launch.py|touch_marker_full_stack.launch.py|front_piper_description_bridge.py|front_piper_move_group_only.py|front_piper_moveit_tf_publisher.py|front_piper_moveit_rviz.py|front_piper_trajectory_bridge.py|start_nav_man_workflow.py|start_iliyas_abot_in_trystan.py' || true
 pkill -TERM -f 'realsense2_camera_node|rgbd_sync|rgbdx_sync|rtabmap|move_group|rviz2|agx_arm_ctrl_single|bunker_base_node|robot_state_publisher|joint_state_prefixer|joint_state_publisher|ekf_node|yesense_node_publisher|piper_navigation_pose|piper_x_joint_preset|search_marker_node|wall_approach_node|piper_touch_marker_api|aruco_ros|aruco_single|static_transform_publisher|depth_route_monitor_node|sensor_fusion_node|safety_monitor_node|cmd_vel_mux_node|nav2_cmd_vel_safety_mux|controller_server|planner_server|behavior_server|bt_navigator|waypoint_follower|velocity_smoother|smoother_server|lifecycle_manager' || true
 
 sleep 2
 
-pkill -KILL -f 'terminal1_sensors.launch.py|terminal2_robot.launch.py|terminal3_mapping.launch.py|nav2_bringup.launch.py|touch_marker_full_stack.launch.py|front_piper_description_bridge.py|front_piper_move_group_only.py|front_piper_moveit_tf_publisher.py|front_piper_moveit_rviz.py|front_piper_trajectory_bridge.py|start_iliyas_abot_in_trystan.py' || true
+pkill -KILL -f 'terminal1_sensors.launch.py|terminal2_robot.launch.py|terminal3_mapping.launch.py|nav2_bringup.launch.py|touch_marker_full_stack.launch.py|front_piper_description_bridge.py|front_piper_move_group_only.py|front_piper_moveit_tf_publisher.py|front_piper_moveit_rviz.py|front_piper_trajectory_bridge.py|start_nav_man_workflow.py|start_iliyas_abot_in_trystan.py' || true
 pkill -KILL -f 'realsense2_camera_node|rgbd_sync|rgbdx_sync|rtabmap|move_group|rviz2|agx_arm_ctrl_single|bunker_base_node|robot_state_publisher|joint_state_prefixer|joint_state_publisher|ekf_node|yesense_node_publisher|piper_navigation_pose|piper_x_joint_preset|search_marker_node|wall_approach_node|piper_touch_marker_api|aruco_ros|aruco_single|static_transform_publisher|depth_route_monitor_node|sensor_fusion_node|safety_monitor_node|cmd_vel_mux_node|nav2_cmd_vel_safety_mux|controller_server|planner_server|behavior_server|bt_navigator|waypoint_follower|velocity_smoother|smoother_server|lifecycle_manager' || true
 
 ros2 daemon stop

@@ -30,6 +30,7 @@ install(
     scripts/front_piper_moveit_rviz.py
     scripts/front_piper_moveit_tf_publisher.py
     scripts/front_piper_trajectory_bridge.py
+    scripts/start_nav_man_workflow.py
     scripts/start_iliyas_abot_in_trystan.py
     scripts/start_standalone_yolo_tmux.sh
     scripts/verify_slam.sh

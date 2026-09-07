@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Start the Trystan-only Nav-Man + Illiyas manipulation integration in tmux.
+"""Start the Bunker Nav-Man navigation and PiPER manipulation workflow in tmux.
 
-This script is intentionally container-local. It does not call docker, does not
-start the old iliyas-abot container, and does not start an automatic handoff
-service. Terminal 1 remains the only hardware owner for Bunker, front/rear
-D435i, optional H30, and the front/rear PiPER drivers.
+This script is intentionally container-local. It does not call Docker, start a
+second integration container, or start an automatic handoff service. Terminal
+1 remains the only hardware owner for Bunker, front/rear D435i, optional H30,
+and the front/rear PiPER drivers.
 """
 
 from __future__ import annotations
@@ -149,6 +149,12 @@ def preflight(args: argparse.Namespace) -> None:
         raise SystemExit("ERROR: /ros2_ws is not mounted inside this environment.")
     if not have_command("tmux"):
         raise SystemExit("ERROR: tmux is missing in this container.")
+    if args.mapping_mode == "localization" and not Path(args.database_path).is_file():
+        raise SystemExit(
+            f"ERROR: RTAB-Map database not found: {args.database_path}. "
+            "Create one first with --mapping-mode mapping --reset-database, "
+            "or pass --database-path for an existing map."
+        )
 
     if args.configure_can:
         configure_can(args.front_piper_can, 1000000)
@@ -197,7 +203,7 @@ def make_commands(args: argparse.Namespace) -> dict[str, str]:
             f"rear_piper_fw_version:={args.rear_piper_fw_version}",
             "front_piper_tcp_offset:='[0.0, 0.0, 0.1425, 0.0, 0.0, 0.0]'",
             "run_piper_initial_pose:=true",
-            "allow_piper_motion:=true",
+            f"allow_piper_motion:={'true' if args.allow_piper_motion else 'false'}",
             "start_h30_imu:=false",
         ]
     )
@@ -205,11 +211,11 @@ def make_commands(args: argparse.Namespace) -> dict[str, str]:
         [
             ROS_ENV,
             "ros2 launch bunker_slam_bringup terminal3_mapping.launch.py",
-            "mode:=localization",
+            f"mode:={args.mapping_mode}",
             "localization_backend:=rtabmap",
             "mapping_camera:=front",
             f"database_path:={args.database_path}",
-            "reset_database:=false",
+            f"reset_database:={'true' if args.reset_database else 'false'}",
             "use_rviz:=false",
         ]
     )
@@ -304,7 +310,7 @@ def make_commands(args: argparse.Namespace) -> dict[str, str]:
         [
             ROS_ENV,
             PIPER_ARUCO_SHARE_ENV,
-            "export PIPER_TOUCH_ALLOW_EXECUTION=1;",
+            f"export PIPER_TOUCH_ALLOW_EXECUTION={'1' if args.allow_piper_motion else '0'};",
             "ros2 run piper_x_aruco_wall_approach piper_touch_marker_api.py",
             "--host 127.0.0.1",
             "--port 8892",
@@ -412,6 +418,22 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--require-front-piper-frames", action="store_true")
     parser.add_argument("--no-rviz", dest="rviz", action="store_false")
     parser.set_defaults(rviz=True)
+    parser.add_argument(
+        "--allow-piper-motion",
+        action="store_true",
+        help="allow physical arm commands; omitted by default for safe bringup",
+    )
+    parser.add_argument(
+        "--reset-database",
+        action="store_true",
+        help="delete/recreate RTAB-Map state at startup; use only when making a new map",
+    )
+    parser.add_argument(
+        "--mapping-mode",
+        choices=("mapping", "localization"),
+        default="localization",
+        help="create/update a map or localize against an existing RTAB-Map database",
+    )
     parser.add_argument("--bunker-can", default="can4")
     parser.add_argument("--front-piper-can", default="can2")
     parser.add_argument("--rear-piper-can", default="can3")
@@ -424,7 +446,13 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         default="/dev/serial/by-id/usb-WCH.CN_USB_Single_Serial_0003-if00",
     )
     parser.add_argument("--database-path", default="/ros2_ws/maps/bunker_dual_rgbd_v2.db")
-    parser.add_argument("--landmark-path", default="/ros2_ws/maps/manual_nav_landmarks.json")
+    parser.add_argument(
+        "--landmark-path",
+        default=(
+            "/ros2_ws/src/bunker-piper_integration/"
+            "bunker_slam_bringup/maps/manual_nav_landmarks.json"
+        ),
+    )
     return parser.parse_args(argv)
 
 
