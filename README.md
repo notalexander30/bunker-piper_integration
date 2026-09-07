@@ -1,5 +1,7 @@
 # Bunker PiPER Integration
 
+[![ROS 2 Humble CI](https://github.com/notalexander30/bunker-piper_integration/actions/workflows/ci.yml/badge.svg)](https://github.com/notalexander30/bunker-piper_integration/actions/workflows/ci.yml)
+
 ROS 2 Humble workspace packages for the Bunker mobile base, dual AgileX PiPER arms, front Intel RealSense D435i, RTAB-Map/Nav2 navigation, and the front PiPER-X ArUco wall-touch manipulation flow.
 
 The maintained operator runbook is:
@@ -16,6 +18,7 @@ The maintained operator runbook is:
 | `piper_x_aruco_wall_approach/` | Front PiPER-X MoveIt/ArUco wall approach, touch services, HTTP API bridge on `127.0.0.1:8892`, and tests. |
 | `docker/` | Example Docker image and compose file for a ROS 2 Humble Nav-Man development container. |
 | `docs/` | GitHub-facing architecture, CAN discovery, gateway, and visualization notes. |
+| `openclaw/` | Supported OpenClaw skill for the localhost PiPER gateway. |
 
 ## Current Nav-Man Design
 
@@ -61,14 +64,21 @@ See [CAN discovery](docs/can_discovery.md) before starting hardware. The current
 
 ## Quick Build
 
-Clone this repository into a ROS 2 workspace `src` directory, then build the packages:
+Clone this repository into a ROS 2 workspace src directory, import the pinned
+external dependencies, then build the packages:
 
 ```bash
 cd /ros2_ws
+vcs import src < src/bunker-piper_integration/dependencies.repos
+rosdep install --from-paths src --ignore-src -r -y \
+  --skip-keys "bunker_object_follower semantic_memory"
 colcon build --symlink-install \
   --packages-select bunker_slam_bringup bunker_dual_piper_nav2 bunker_autonomy piper_x_aruco_wall_approach
 source install/setup.bash
 ```
+
+See [external dependencies](docs/dependencies.md) for pinned revisions and the
+two optional lab-only packages that do not yet have public upstream URLs.
 
 The real robot workflow runs inside the `trystan-bunker-navigation` Docker container. Follow the terminal-by-terminal commands in [NAV_MAN_INTEGRATION_STARTUP.md](bunker_slam_bringup/NAV_MAN_INTEGRATION_STARTUP.md).
 
@@ -96,16 +106,23 @@ See [URDF visualization](docs/urdf_visualization.md) for the frame map and RViz 
 
 - Do not start standalone PiPER, RealSense, robot-state-publisher, RTAB-Map, or Nav2 launch files while the Nav-Man startup already owns them.
 - Physical PiPER movement requires the explicit `allow_piper_motion:=true` argument in the launch path that supports it.
-- Keep OpenClaw/Agent Server disabled until the lower-level `8892` manual API flow is proven on the robot.
+- The supported OpenClaw gateway must remain a client of the lower-level
+  8892 API and must never become a second hardware or ROS graph owner.
 - Validate CAN adapter labels and front/rear PiPER assignment before commanding motion.
 - The lower-level PiPER touch API is documented on `127.0.0.1:8892`; the OpenClaw gateway is documented on `127.0.0.1:8893`. See [OpenClaw gateway](docs/openclaw_gateway.md).
 
-## Questions Before Adding More
+## Public Repository Policy
 
-These are the remaining repo decisions that need operator input:
+- The repository is intended to be public.
+- Hardware SDKs and ROS wrappers remain external, pinned dependencies.
+- Current robot calibration values, camera identifiers, and sample maps are
+  included as operator-provided project data.
+- The OpenClaw gateway on 127.0.0.1:8893 is a supported component.
+- GitHub Actions builds and tests the four maintained packages on ROS 2 Humble.
 
-1. Should this repo vendor the hardware SDK packages directly, or keep them as external dependencies?
-2. Which exact upstream branches/tags should be used for `agx_arm_ros`, `ugv_sdk`, RealSense, ArUco, and OpenClaw?
-3. Should the `8893` OpenClaw gateway become a real ROS/package entry point in this repo, or stay documented until the gateway implementation is ready to publish?
-4. Which sample map should be the default map for public demos?
-5. Do you want GitHub Actions added for lint/build checks?
+## Licensing
+
+New repository-level integration material is released under Apache-2.0. Some
+package directories and third-party assets retain their existing BSD-3-Clause,
+MIT, Apache-2.0, or upstream terms. See [licensing and asset
+provenance](docs/licensing.md) before redistributing robot meshes.

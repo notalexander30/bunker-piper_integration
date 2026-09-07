@@ -37,14 +37,19 @@ RUN rosdep update
 
 WORKDIR /ros2_ws
 
+COPY dependencies.repos /tmp/nav-man-dependencies.repos
+RUN vcs import /ros2_ws/src < /tmp/nav-man-dependencies.repos
+
 COPY . /ros2_ws/src/bunker-piper_integration
 
 RUN bash -lc 'source /opt/ros/humble/setup.bash && \
-    rosdep install --from-paths src --ignore-src -r -y || true'
+    rosdep install --from-paths src --ignore-src -r -y \
+      --skip-keys "bunker_object_follower semantic_memory"'
 
 RUN bash -lc 'source /opt/ros/humble/setup.bash && \
     colcon build --symlink-install \
-      --packages-select bunker_slam_bringup bunker_dual_piper_nav2 bunker_autonomy piper_x_aruco_wall_approach'
+      --packages-up-to bunker_slam_bringup bunker_dual_piper_nav2 \
+        bunker_autonomy piper_x_aruco_wall_approach'
 
 RUN printf '%s\n' \
     'source /opt/ros/humble/setup.bash' \

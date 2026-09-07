@@ -486,7 +486,12 @@ def draw_dashboard(
             ),
         )
     row = draw_line(stdscr, row, "")
-    row = draw_line(stdscr, row, "Keys: s stationary  f forward/back  r rotate return  l loop  o one-way rotate  SPACE stop  q quit")
+    row = draw_line(
+        stdscr,
+        row,
+        "Keys: s stationary  f forward/back  r rotate return  l loop  "
+        "o one-way rotate  SPACE stop  q quit",
+    )
     row = draw_line(stdscr, row, "")
     row = draw_line(stdscr, row, f"Status: {status}")
     row = draw_line(stdscr, row, "")
@@ -588,7 +593,10 @@ def print_report(collector: MetricCollector) -> None:
         print("No trials completed.")
         return
     print("\nTrials:")
-    print("type,duration_s,wheel_return_m,wheel_yaw_rad,fused_return_m,fused_yaw_rad,imu_yaw_rad,wheel_samples,fused_samples,imu_samples")
+    print(
+        "type,duration_s,wheel_return_m,wheel_yaw_rad,fused_return_m,"
+        "fused_yaw_rad,imu_yaw_rad,wheel_samples,fused_samples,imu_samples"
+    )
     for trial in trials:
         print(
             ",".join(

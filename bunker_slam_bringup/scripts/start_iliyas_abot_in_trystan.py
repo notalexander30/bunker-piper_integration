@@ -29,7 +29,10 @@ ROS_ENV = (
 )
 PIPER_ARUCO_SHARE_ENV = (
     'PIPER_ARUCO_PREFIX="$(ros2 pkg prefix piper_x_aruco_wall_approach 2>/dev/null)" || '
-    '{ echo "Package piper_x_aruco_wall_approach not found. Run: cd /ros2_ws && source /opt/ros/humble/setup.bash && colcon build --symlink-install --base-paths src/piper_x_aruco_wall_approach && source /ros2_ws/install/setup.bash"; exit 1; }; '
+    '{ echo "Package piper_x_aruco_wall_approach not found. Run: cd /ros2_ws && '
+    'source /opt/ros/humble/setup.bash && colcon build --symlink-install '
+    '--base-paths src/piper_x_aruco_wall_approach && '
+    'source /ros2_ws/install/setup.bash"; exit 1; }; '
     'export PIPER_ARUCO_SHARE="$PIPER_ARUCO_PREFIX/share/piper_x_aruco_wall_approach"; '
 )
 

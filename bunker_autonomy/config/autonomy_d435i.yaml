@@ -27,7 +27,7 @@ depth_route_monitor_node:
     # Nav2 costmaps still consume the pointcloud; this monitor is only the
     # conservative emergency route gate.
     roi_top_fraction: 0.20
-    roi_bottom_fraction: 0.75
+    roi_bottom_fraction: 0.82
     roi_left_fraction: 0.15
     roi_right_fraction: 0.85
     left_sector_end_fraction: 0.333333

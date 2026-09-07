@@ -1,0 +1,70 @@
+name: ROS 2 Humble CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-22.04
+    container: ros:humble-ros-base-jammy
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install build tools
+        shell: bash
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            git \
+            python3-colcon-common-extensions \
+            python3-rosdep \
+            python3-vcstool
+
+      - name: Create workspace and import pinned dependencies
+        shell: bash
+        run: |
+          mkdir -p /tmp/nav-man-ws/src
+          ln -s "$GITHUB_WORKSPACE" /tmp/nav-man-ws/src/bunker-piper_integration
+          vcs import /tmp/nav-man-ws/src < dependencies.repos
+
+      - name: Install ROS dependencies
+        shell: bash
+        run: |
+          source /opt/ros/humble/setup.bash
+          rosdep update
+          rosdep install --from-paths /tmp/nav-man-ws/src --ignore-src -r -y \
+            --skip-keys "bunker_object_follower semantic_memory"
+
+      - name: Build
+        shell: bash
+        working-directory: /tmp/nav-man-ws
+        run: |
+          source /opt/ros/humble/setup.bash
+          colcon build --symlink-install \
+            --packages-up-to \
+              bunker_slam_bringup \
+              bunker_dual_piper_nav2 \
+              bunker_autonomy \
+              piper_x_aruco_wall_approach
+
+      - name: Test repository packages
+        shell: bash
+        working-directory: /tmp/nav-man-ws
+        run: |
+          source /opt/ros/humble/setup.bash
+          source install/setup.bash
+          colcon test --return-code-on-test-failure \
+            --packages-select \
+              bunker_slam_bringup \
+              bunker_dual_piper_nav2 \
+              bunker_autonomy \
+              piper_x_aruco_wall_approach
+          colcon test-result --verbose

@@ -1,6 +1,7 @@
-# OpenClaw Gateway
+# Supported OpenClaw Gateway
 
-The current Nav-Man integration keeps the direct manipulation API and the higher-level OpenClaw gateway as separate layers:
+The OpenClaw gateway is a supported Nav-Man component. The integration keeps
+the direct manipulation API and higher-level gateway as separate layers:
 
 ```mermaid
 flowchart LR
@@ -21,7 +22,7 @@ flowchart LR
 
 The `8893` gateway must not start a second PiPER driver, RealSense node, robot-state-publisher, MoveIt stack, RTAB-Map instance, Nav2 instance, or TF branch. It should translate high-level OpenClaw requests into validated calls against `8892`.
 
-## Suggested Gateway Contract
+## Gateway Contract
 
 Minimum endpoints for the gateway:
 
@@ -66,3 +67,16 @@ Then check it:
 curl -s http://127.0.0.1:8893/health | python3 -m json.tool
 curl -s http://127.0.0.1:8893/capabilities | python3 -m json.tool
 ```
+
+## Install the OpenClaw skill
+
+Copy or symlink the included skill into the target OpenClaw workspace:
+
+```bash
+mkdir -p /path/to/openclaw-workspace/skills
+ln -s /ros2_ws/src/bunker-piper_integration/openclaw/skills/piper-touch-marker \
+  /path/to/openclaw-workspace/skills/piper-touch-marker
+```
+
+The skill only calls the supported localhost gateway. It does not own ROS or
+robot hardware.

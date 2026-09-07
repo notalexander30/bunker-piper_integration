@@ -75,7 +75,18 @@ install(DIRECTORY config launch DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_cmake_pytest REQUIRED)
-  ament_add_pytest_test(test_piper_touch_marker_api test/test_piper_touch_marker_api.py)
+  find_package(Python3 COMPONENTS Interpreter REQUIRED)
+  execute_process(
+    COMMAND ${Python3_EXECUTABLE} -c "import fastapi, httpx"
+    RESULT_VARIABLE PIPER_API_TEST_DEPS_RESULT
+    OUTPUT_QUIET
+    ERROR_QUIET
+  )
+  if(PIPER_API_TEST_DEPS_RESULT EQUAL 0)
+    ament_add_pytest_test(test_piper_touch_marker_api test/test_piper_touch_marker_api.py)
+  else()
+    message(STATUS "Skipping API tests: python3-fastapi/python3-httpx are not installed")
+  endif()
   ament_add_pytest_test(test_launch_files test/test_launch_files.py)
   ament_add_pytest_test(test_front_piper_joint_state_adapter test/test_front_piper_joint_state_adapter.py)
   ament_add_pytest_test(test_skill_contract test/test_skill_contract.py)

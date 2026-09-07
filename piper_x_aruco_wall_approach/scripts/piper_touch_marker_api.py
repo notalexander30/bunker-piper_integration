@@ -1413,6 +1413,11 @@ def create_app(adapter: RosMarkerTaskAdapter, api_token: Optional[str] = None) -
         try:
             mapping_pause_result = adapter.pause_mapping_for_manipulation() if request.execute else None
             arm_enable_result = ensure_request_arm_enabled(request.arm) if request.execute else None
+            previous_saved = (
+                adapter.save_previous()
+                if request.execute and normalize_arm(request.arm) == "front"
+                else None
+            )
             manipulation_pose_result = prepare_manipulation_pose(request.arm, request.execute)
             health_snapshot = adapter.health()
             search_result = None
@@ -1436,7 +1441,6 @@ def create_app(adapter: RosMarkerTaskAdapter, api_token: Optional[str] = None) -
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail="home trajectory action unavailable",
                 )
-            previous_saved = adapter.save_previous() if request.execute and normalize_arm(request.arm) == "front" else None
             result = adapter.run_task(mode, request)
             if search_result is not None and "search_result" not in result:
                 result["search_result"] = search_result

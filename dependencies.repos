@@ -1,0 +1,17 @@
+repositories:
+  agx_arm_ros:
+    type: git
+    url: https://github.com/agilexrobotics/agx_arm_ros.git
+    version: 91e6b2e5eb2d9880e85230d0add9945e27387d87
+  bunker_ros2:
+    type: git
+    url: https://github.com/agilexrobotics/bunker_ros2.git
+    version: f15130fcc4906ca8d9ef8efa85e0934e6c3867e6
+  frontier_exploration_ros2:
+    type: git
+    url: https://github.com/mertgulerx/frontier_exploration_ros2.git
+    version: ec530d2a813739cd25dd0c438d2365c510b9fad8
+  simple_vlm:
+    type: git
+    url: https://github.com/JINGERGER/simple_vlm.git
+    version: f0dcaba94319cc00fddc4995763630d144ce7db8

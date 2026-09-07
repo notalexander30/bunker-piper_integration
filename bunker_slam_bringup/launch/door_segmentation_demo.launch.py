@@ -35,7 +35,11 @@ def generate_launch_description():
         DeclareLaunchArgument('configure_can', default_value='false'),
         DeclareLaunchArgument('imu_gate_timeout', default_value='30.0'),
         DeclareLaunchArgument('use_rviz', default_value='true'),
-        LogInfo(msg='Door segmentation demo: RTAB-Map localization + door SQLite memory. Door perception starts no controller, avoidance planner, or command mux.'),
+        LogInfo(
+            msg='Door segmentation demo: RTAB-Map localization + door SQLite '
+            'memory. Door perception starts no controller, avoidance planner, '
+            'or command mux.'
+        ),
         IncludeLaunchDescription(PythonLaunchDescriptionSource(localization), launch_arguments={
             'database_path': LaunchConfiguration('rtabmap_database_path'),
             'bunker_port': LaunchConfiguration('bunker_port'),

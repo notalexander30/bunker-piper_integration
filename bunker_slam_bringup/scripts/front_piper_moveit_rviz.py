@@ -9,7 +9,7 @@ from launch import LaunchDescription, LaunchService
 from launch_ros.actions import Node
 
 sys.path.insert(0, str(Path(__file__).parent))
-from front_piper_integrated_moveit_model import moveit_parameters
+from front_piper_integrated_moveit_model import moveit_parameters  # noqa: E402
 
 
 def main() -> int:
