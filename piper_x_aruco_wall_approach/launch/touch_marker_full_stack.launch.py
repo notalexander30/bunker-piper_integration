@@ -98,7 +98,7 @@ def generate_launch_description():
         DeclareLaunchArgument("use_search_marker_node", default_value="true"),
         DeclareLaunchArgument("use_marker_api", default_value="true"),
         DeclareLaunchArgument("use_rviz", default_value="false"),
-        DeclareLaunchArgument("can_port", default_value="can2"),
+        DeclareLaunchArgument("can_port", default_value=""),
         DeclareLaunchArgument("auto_enable", default_value="true"),
         DeclareLaunchArgument("follow", default_value="true"),
         DeclareLaunchArgument("auto_control_gate", default_value="false"),

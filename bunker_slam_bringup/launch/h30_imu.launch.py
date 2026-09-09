@@ -16,7 +16,7 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'serial_port',
-            default_value='/dev/serial/by-id/usb-WCH.CN_USB_Single_Serial_0003-if00'),
+            default_value=''),
         DeclareLaunchArgument('baud_rate', default_value='460800'),
         DeclareLaunchArgument('frame_id', default_value='imu_link'),
         Node(

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import shlex
 import shutil
 import signal
 import subprocess
@@ -149,6 +150,25 @@ def preflight(args: argparse.Namespace) -> None:
         raise SystemExit("ERROR: /ros2_ws is not mounted inside this environment.")
     if not have_command("tmux"):
         raise SystemExit("ERROR: tmux is missing in this container.")
+    required_values = {
+        "--bunker-can": args.bunker_can,
+        "--front-piper-can": args.front_piper_can,
+        "--front-camera-serial": args.front_camera_serial,
+    }
+    if not args.disable_rear_piper:
+        required_values["--rear-piper-can"] = args.rear_piper_can
+    missing_values = [name for name, value in required_values.items() if not str(value).strip()]
+    if missing_values:
+        raise SystemExit(
+            "ERROR: provide deployment-specific values for " + ", ".join(missing_values)
+        )
+    if args.abot_root:
+        agent_script = (
+            Path(args.abot_root)
+            / "robot_layer/arm_piper_x/agent_server/start_piper_x_agent_server.sh"
+        )
+        if not agent_script.is_file():
+            raise SystemExit(f"ERROR: ABot Agent Server script not found: {agent_script}")
     if args.mapping_mode == "localization" and not Path(args.database_path).is_file():
         raise SystemExit(
             f"ERROR: RTAB-Map database not found: {args.database_path}. "
@@ -282,6 +302,7 @@ def make_commands(args: argparse.Namespace) -> dict[str, str]:
             "-p joint_state_topic:=/joint_states",
             "-p move_group_namespace:=front_piper",
             "-p controller_manager_service:=/front_piper/controller_manager/list_hardware_components",
+            "-p require_physical_hardware:=false",
             "-r joint_states:=/joint_states",
             "-r robot_description:=/robot_description",
             "-r robot_description_semantic:=/front_piper/robot_description_semantic",
@@ -301,6 +322,7 @@ def make_commands(args: argparse.Namespace) -> dict[str, str]:
             "-p goal_orientation_tolerance:=0.35",
             "-p move_group_namespace:=front_piper",
             "-p point_cloud_topic:=/front_camera/depth/color/points",
+            "-p joint_state_topic:=/joint_states",
             "-r joint_states:=/joint_states",
             "-r robot_description:=/robot_description",
             "-r robot_description_semantic:=/front_piper/robot_description_semantic",
@@ -330,18 +352,37 @@ def make_commands(args: argparse.Namespace) -> dict[str, str]:
             "--command-joint-prefix front_piper_",
         ]
     )
-    openclaw_gateway = " ".join(
-        [
-            ROS_ENV,
-            "export OPENCLAW_GATEWAY_HOST=127.0.0.1;",
-            "export OPENCLAW_GATEWAY_PORT=8893;",
-            "export PIPER_TOUCH_API_URL=http://127.0.0.1:8892;",
-            "ros2 run piper_x_aruco_wall_approach openclaw_gateway.py",
-            "--host 127.0.0.1",
-            "--port 8893",
-            "--api-base http://127.0.0.1:8892",
-        ]
-    )
+    if args.abot_root:
+        abot_root = shlex.quote(str(Path(args.abot_root).resolve()))
+        agent_execution = "1" if args.allow_piper_motion else "0"
+        openclaw_gateway = " ".join(
+            [
+                ROS_ENV,
+                f"cd {abot_root};",
+                f"export PIPER_X_AGENT_ALLOW_EXECUTION={agent_execution};",
+                f"export PIPER_TOUCH_ALLOW_EXECUTION={agent_execution};",
+                "export PIPER_X_MARKER_API_URL=http://127.0.0.1:8892;",
+                "export PIPER_X_MARKER_ID=6;",
+                "export PIPER_X_MARKER_SIZE_M=0.06;",
+                "export PIPER_X_JOINT_STATE_TOPIC=/front_piper/feedback/joint_states;",
+                "export PIPER_X_GRIPPER_CONTROL_TOPIC=/front_piper/control/joint_states;",
+                "export PIPER_X_TRAJECTORY_ACTION=/front_piper/arm_controller/follow_joint_trajectory;",
+                "exec ./robot_layer/arm_piper_x/agent_server/start_piper_x_agent_server.sh",
+            ]
+        )
+    else:
+        openclaw_gateway = " ".join(
+            [
+                ROS_ENV,
+                "export OPENCLAW_GATEWAY_HOST=127.0.0.1;",
+                "export OPENCLAW_GATEWAY_PORT=8893;",
+                "export PIPER_TOUCH_API_URL=http://127.0.0.1:8892;",
+                "ros2 run piper_x_aruco_wall_approach openclaw_gateway.py",
+                "--host 127.0.0.1",
+                "--port 8893",
+                "--api-base http://127.0.0.1:8892",
+            ]
+        )
     watchdogs = " ".join(
         [
             ROS_ENV,
@@ -368,7 +409,7 @@ def make_commands(args: argparse.Namespace) -> dict[str, str]:
         "t9_marker_search": search_marker,
         "t10_wall_approach": wall_approach,
         "t11_api_8892": marker_api,
-        "t12_openclaw_8893": openclaw_gateway,
+        "t12_agent_8893": openclaw_gateway,
         "t13_watchdogs": watchdogs,
         "t14_frontier_mrtsp": frontier_mrtsp,
     }
@@ -434,23 +475,28 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         default="localization",
         help="create/update a map or localize against an existing RTAB-Map database",
     )
-    parser.add_argument("--bunker-can", default="can4")
-    parser.add_argument("--front-piper-can", default="can2")
-    parser.add_argument("--rear-piper-can", default="can3")
-    parser.add_argument("--front-camera-serial", default="243322074578")
-    parser.add_argument("--rear-camera-serial", default="261222077434")
+    parser.add_argument("--bunker-can", default="")
+    parser.add_argument("--front-piper-can", default="")
+    parser.add_argument("--rear-piper-can", default="")
+    parser.add_argument("--front-camera-serial", default="")
+    parser.add_argument("--rear-camera-serial", default="")
     parser.add_argument("--front-piper-fw-version", default="v189")
     parser.add_argument("--rear-piper-fw-version", default="v189")
-    parser.add_argument(
-        "--h30-serial-port",
-        default="/dev/serial/by-id/usb-WCH.CN_USB_Single_Serial_0003-if00",
-    )
+    parser.add_argument("--h30-serial-port", default="")
     parser.add_argument("--database-path", default="/ros2_ws/maps/bunker_dual_rgbd_v2.db")
     parser.add_argument(
         "--landmark-path",
         default=(
             "/ros2_ws/src/bunker-piper_integration/"
             "bunker_slam_bringup/maps/manual_nav_landmarks.json"
+        ),
+    )
+    parser.add_argument(
+        "--abot-root",
+        default="",
+        help=(
+            "optional ABot-Claw-piperX checkout; starts the Iliyas Agent Server "
+            "on 8893 instead of the bundled compatibility gateway"
         ),
     )
     return parser.parse_args(argv)

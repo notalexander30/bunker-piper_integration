@@ -71,7 +71,7 @@ front_piper_can:=FRONT_PIPER_CANX
 ```
 
 Resolve the `canX` names before launch. The current lab robot has used
-`can2` for the front PiPER, `can3` for the rear PiPER, and `can4` for the
+`FRONT_PIPER_CAN` for the front PiPER, `REAR_PIPER_CAN` for the rear PiPER, and `BUNKER_CAN` for the
 Bunker, but public users should treat those as examples only because Linux
 `canN` assignment can change.
 
@@ -105,7 +105,7 @@ Current ownership split:
 | ArUco detector | Optional debug in Trystan Terminal 1; normal Nav-Man detector is Terminal 8 | Yes, Terminal 8 starts the manipulation ArUco detector | It subscribes to Trystan's front camera topics |
 | Search/approach/touch nodes | No | Yes, Terminal 9 and Terminal 10 | They use Trystan's camera, point cloud, TF, joint states, and MoveIt |
 | HTTP API | No | Yes, Terminal 11 exposes lower-level API on `127.0.0.1:8892` | API calls ROS services/actions inside the same Docker |
-| OpenClaw gateway | No hardware ownership | Optional gateway on `127.0.0.1:8893` | Gateway calls `8892`; it must not own ROS hardware or TF |
+| ABot Agent/OpenClaw layer | No hardware ownership | Optional Agent Server on `127.0.0.1:8893` | Agent calls `8892`; it must not own ROS hardware or TF |
 
 Slide version:
 
@@ -116,7 +116,7 @@ Iliyas starts:
 - marker search service
 - wall approach / touch services
 - lower-level HTTP API on 127.0.0.1:8892
-- optional OpenClaw gateway on 127.0.0.1:8893, calling 8892 only
+- optional Iliyas ABot Agent Server on 127.0.0.1:8893, calling 8892 only
 
 Trystan starts:
 - bunker-nav-man Docker
@@ -484,7 +484,7 @@ t8_aruco             integrated SRDF bridge plus ArUco ID 6 detector
 t9_marker_search     /search_marker service
 t10_wall_approach    /run_wall_approach and /run_marker_task services
 t11_api_8892         HTTP API on 127.0.0.1:8892
-t12_openclaw_8893    optional OpenClaw gateway on 127.0.0.1:8893
+t12_agent_8893       ABot Agent Server or bundled compatibility gateway on 8893
 t13_watchdogs        live watchdog/source monitor for Nav2 mux, safety, camera
 t14_frontier_mrtsp   upstream frontier_exploration_ros2 cold-idle explorer
 ```
@@ -539,7 +539,7 @@ ros2 run frontier_exploration_ros2 frontier_exploration_ctl stop
 
 ## Mode 5: Front-only fallback automatic startup
 
-Use this when rear PiPER `can3` is unavailable but you still want Bunker, front
+Use this when rear PiPER `REAR_PIPER_CAN` is unavailable but you still want Bunker, front
 camera, front PiPER, MoveIt, RTAB-Map, Nav2, and the API to start:
 
 ```bash
@@ -602,15 +602,15 @@ export ROS_LOCALHOST_ONLY=1
 export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 
 ros2 launch bunker_slam_bringup terminal1_sensors.launch.py \
-  arm_can:=can2 \
-  bunker_can:=can4 \
-  rear_piper_can:=can3 \
-  front_piper_can:=can2 \
+  arm_can:=FRONT_PIPER_CAN \
+  bunker_can:=BUNKER_CAN \
+  rear_piper_can:=REAR_PIPER_CAN \
+  front_piper_can:=FRONT_PIPER_CAN \
   launch_front_camera:=true \
   launch_rear_camera:=false \
   reset_front_camera_usb:=false \
-  front_camera_serial:=243322074578 \
-  rear_camera_serial:=261222077434 \
+  front_camera_serial:=FRONT_CAMERA_SERIAL \
+  rear_camera_serial:=REAR_CAMERA_SERIAL \
   configure_can:=true \
   start_piper_drivers:=true \
   start_front_piper_driver:=true \
@@ -1109,35 +1109,54 @@ Check:
 curl -s http://127.0.0.1:8892/health | python3 -m json.tool
 ```
 
-### Terminal 12: OpenClaw gateway on 8893
+### Terminal 12: Iliyas ABot Agent Server on 8893
 
-Use this layer for higher-level OpenClaw or agent requests. It should forward to
-the lower-level `8892` API and must not start another PiPER driver, camera,
-robot-state-publisher, MoveIt stack, RTAB-Map instance, Nav2 instance, or TF
-branch.
+Use the external ABot Agent Server for the supplied Iliyas/OpenClaw workflow.
+It forwards validated tool requests to 8892 and must not start another PiPER
+driver, camera, robot-state-publisher, MoveIt stack, RTAB-Map, Nav2, or TF
+branch. Install it outside `/ros2_ws/src` as described in
+`docs/iliyas_openclaw_integration.md`.
 
 ```bash
-cd /ros2_ws
+cd /opt/nav-man-agent/ABot-Claw-piperX
 source /opt/ros/humble/setup.bash
 source /ros2_ws/install/setup.bash
 export ROS_DOMAIN_ID=173
 export ROS_LOCALHOST_ONLY=1
 export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-export OPENCLAW_GATEWAY_HOST=127.0.0.1
-export OPENCLAW_GATEWAY_PORT=8893
-export PIPER_TOUCH_API_URL=http://127.0.0.1:8892
+export PIPER_X_AGENT_ALLOW_EXECUTION=0
+export PIPER_TOUCH_ALLOW_EXECUTION=0
+export PIPER_X_MARKER_API_URL=http://127.0.0.1:8892
+export PIPER_X_MARKER_ID=6
+export PIPER_X_MARKER_SIZE_M=0.06
+export PIPER_X_JOINT_STATE_TOPIC=/front_piper/feedback/joint_states
+export PIPER_X_GRIPPER_CONTROL_TOPIC=/front_piper/control/joint_states
+export PIPER_X_TRAJECTORY_ACTION=/front_piper/arm_controller/follow_joint_trajectory
 
-ros2 run piper_x_aruco_wall_approach openclaw_gateway.py \
-  --host 127.0.0.1 \
-  --port 8893 \
-  --api-base http://127.0.0.1:8892
+./robot_layer/arm_piper_x/agent_server/start_piper_x_agent_server.sh
 ```
 
 Check:
 
 ```bash
 curl -s http://127.0.0.1:8893/health | python3 -m json.tool
-curl -s http://127.0.0.1:8893/capabilities | python3 -m json.tool
+```
+
+For automatic startup, pass:
+
+```text
+--abot-root /opt/nav-man-agent/ABot-Claw-piperX
+```
+
+When the external checkout is not installed, the launcher uses the bundled
+8893 compatibility gateway instead. Do not run both implementations on the
+same port. Start the OpenClaw gateway/TUI only after 8892 and 8893 are healthy.
+The supplied reference uses the external checkout's deployment script; confirm
+it exists in the selected revision:
+
+```bash
+./deployment/scripts/start_openclaw_trystan.sh gateway
+./deployment/scripts/start_openclaw_trystan.sh tui
 ```
 
 ### Manual controls
@@ -1177,9 +1196,9 @@ Run these after the automatic tmux startup or after manual Terminal 1-7 startup.
 ### CAN and odometry
 
 ```bash
-ip -details link show can2
-ip -details link show can3
-ip -details link show can4
+ip -details link show FRONT_PIPER_CAN
+ip -details link show REAR_PIPER_CAN
+ip -details link show BUNKER_CAN
 
 ros2 topic echo --once /odom
 ros2 topic hz /odom
@@ -1226,8 +1245,8 @@ ros2 topic echo --once /rear_piper/feedback/joint_states
 Expected:
 
 ```text
-front PiPER joint feedback publishes from can2
-rear PiPER joint feedback publishes from can3
+front PiPER joint feedback publishes from FRONT_PIPER_CAN
+rear PiPER joint feedback publishes from REAR_PIPER_CAN
 ```
 
 If rear PiPER is disabled or firmware is missing, `/rear_piper/feedback/joint_states`
@@ -1744,28 +1763,28 @@ If `/health` says `fresh joint state unavailable`:
 ```bash
 ros2 topic info /front_piper/feedback/joint_states
 ros2 topic hz /front_piper/feedback/joint_states
-ip -details -statistics link show can2
-timeout 3 candump -L can2
+ip -details -statistics link show FRONT_PIPER_CAN
+timeout 3 candump -L FRONT_PIPER_CAN
 ```
 
 Expected:
 
 ```text
 /front_piper/feedback/joint_states has Publisher count: 1
-can2 is UP at 1000000 bit/s
-candump can2 shows PiPER frames
+FRONT_PIPER_CAN is UP at 1000000 bit/s
+candump FRONT_PIPER_CAN shows PiPER frames
 ```
 
-If `can2` is DOWN, bring it back up:
+If `FRONT_PIPER_CAN` is DOWN, bring it back up:
 
 ```bash
-ip link set can2 down 2>/dev/null || true
-ip link set can2 type can bitrate 1000000 restart-ms 100
-ip link set can2 up
+ip link set FRONT_PIPER_CAN down 2>/dev/null || true
+ip link set FRONT_PIPER_CAN type can bitrate 1000000 restart-ms 100
+ip link set FRONT_PIPER_CAN up
 ```
 
-If `can2` is UP but `candump -L can2` shows no frames, the front PiPER hardware,
-power, firmware, or CAN cable is not publishing on can2. The API cannot search
+If `FRONT_PIPER_CAN` is UP but `candump -L FRONT_PIPER_CAN` shows no frames, the front PiPER hardware,
+power, firmware, or CAN cable is not publishing on FRONT_PIPER_CAN. The API cannot search
 or move until this is fixed.
 
 If `/health` says `point_cloud_available:false`:
@@ -1929,7 +1948,7 @@ use_cmd_vel_mux:=true
 The integrated startup includes:
 
 ```text
-t12_watchdogs
+t13_watchdogs
 ```
 
 That terminal runs:

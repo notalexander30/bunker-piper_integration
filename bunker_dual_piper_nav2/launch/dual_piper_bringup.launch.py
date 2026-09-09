@@ -118,8 +118,8 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='false'),
-        DeclareLaunchArgument('front_piper_can', default_value='can2'),
-        DeclareLaunchArgument('rear_piper_can', default_value='can3'),
+        DeclareLaunchArgument('front_piper_can', default_value=''),
+        DeclareLaunchArgument('rear_piper_can', default_value=''),
         DeclareLaunchArgument(
             'configure_piper_can',
             default_value='true',
@@ -150,8 +150,8 @@ def generate_launch_description():
         DeclareLaunchArgument('start_rviz', default_value='true'),
         DeclareLaunchArgument('rviz_config_file', default_value=default_rviz_config),
         LogInfo(msg=(
-            'Dual PiPER bringup uses front_piper_can:=can2 and '
-            'rear_piper_can:=can3 by default. It commands the low-speed '
+            'Dual PiPER bringup requires discovered front_piper_can and '
+            'rear_piper_can values. It commands the low-speed '
             'front/rear initial pose unless launch arguments override it.')),
         configure_can,
         RegisterEventHandler(

@@ -1,4 +1,4 @@
-"""Start one PiPER-X driver on can3 and optionally run a YAML preset."""
+"""Start one PiPER-X driver on an operator-selected CAN link."""
 
 import os
 import re
@@ -32,7 +32,7 @@ def validate_piper_x_can(context):
     if result.returncode != 0 or 'link/can' not in details:
         raise RuntimeError(
             f"PiPER-X CAN interface '{interface}' does not exist or is not CAN. "
-            'Expected PiPER-X on can3.')
+            'Pass the serial-verified PiPER-X CAN interface.')
     if not re.search(r'<[^>]*\bUP\b[^>]*>', details):
         raise RuntimeError(
             f"PiPER-X CAN interface '{interface}' is DOWN. Run: "
@@ -84,8 +84,8 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'can_port',
-            default_value='can3',
-            description='SocketCAN interface for the rear PiPER-X arm. Current assignment: can3.'),
+            default_value='',
+            description='Serial-verified SocketCAN interface for the rear PiPER-X arm.'),
         DeclareLaunchArgument(
             'speed_percent',
             default_value='5',
@@ -109,7 +109,7 @@ def generate_launch_description():
             default_value='false',
             choices=['true', 'false'],
             description='Second explicit gate required for physical PiPER-X motion.'),
-        LogInfo(msg='PiPER-X bringup: can3 driver first, optional YAML preset second.'),
+        LogInfo(msg='PiPER-X bringup: selected CAN driver first, optional YAML preset second.'),
         OpaqueFunction(function=validate_piper_x_can),
         driver,
         TimerAction(period=4.0, actions=[preset_runner]),

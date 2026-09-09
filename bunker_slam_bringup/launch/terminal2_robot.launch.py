@@ -147,10 +147,10 @@ def generate_launch_description():
     ))
 
     return LaunchDescription([
-        DeclareLaunchArgument('arm_can', default_value='can2'),
-        DeclareLaunchArgument('bunker_can', default_value='can4'),
-        DeclareLaunchArgument('front_piper_can', default_value='can2'),
-        DeclareLaunchArgument('rear_piper_can', default_value='can3'),
+        DeclareLaunchArgument('arm_can', default_value=''),
+        DeclareLaunchArgument('bunker_can', default_value=''),
+        DeclareLaunchArgument('front_piper_can', default_value=''),
+        DeclareLaunchArgument('rear_piper_can', default_value=''),
         DeclareLaunchArgument('bunker_control_rate', default_value='20'),
         DeclareLaunchArgument(
             'start_piper_drivers',
@@ -201,9 +201,7 @@ def generate_launch_description():
             choices=['true', 'false']),
         DeclareLaunchArgument(
             'h30_serial_port',
-            default_value=(
-                '/dev/serial/by-id/'
-                'usb-WCH.CN_USB_Single_Serial_0003-if00')),
+            default_value=''),
         DeclareLaunchArgument('h30_baud_rate', default_value='460800'),
         DeclareLaunchArgument('h30_frame_id', default_value='imu_link'),
         DeclareLaunchArgument('h30_x', default_value='0.0'),

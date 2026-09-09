@@ -76,8 +76,8 @@ cd ~/ABot-Claw-piper-publish
 
 The installer enables the user service but does not start it. It does not configure CAN.
 
-`can2` must already be configured and UP before starting the stack. The PiPER-X
-arm is expected on `can2`; the Bunker base is expected on `can4`.
+`FRONT_PIPER_CAN` must already be configured and UP before starting the stack. The PiPER-X
+arm is expected on `FRONT_PIPER_CAN`; the Bunker base is expected on `BUNKER_CAN`.
 
 ## Managed Startup
 
@@ -143,7 +143,7 @@ ros2 launch piper_x_aruco_wall_approach touch_marker_full_stack.launch.py \
   piper_namespace:=front_piper \
   use_piper_motion_stack:=false \
   use_handeye_tf_publisher:=false \
-  can_port:=can2 \
+  can_port:=FRONT_PIPER_CAN \
   use_realsense:=false \
   camera_image_topic:=/front_camera/color/image_raw \
   camera_info_topic:=/front_camera/color/camera_info \
@@ -175,7 +175,7 @@ MoveIt nodes. The launch starts only:
 - HTTP API bridge
 
 It must not be run together with another PiPER-X driver on the selected CAN
-interface. The PiPER-X arm uses `can2`. The Bunker base uses `can4`.
+interface. The PiPER-X arm uses `FRONT_PIPER_CAN`. The Bunker base uses `BUNKER_CAN`.
 
 The combined Bunker URDF publishes prefixed names such as
 `front_piper_joint1` on `/joint_states`, while Trystan's namespaced front

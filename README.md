@@ -26,7 +26,7 @@ real robot still needs the items marked **operator required** below.
 | ArUco search, approach, touch, and HTTP APIs | Yes | Print/use marker ID 6 at 60 mm, then validate in dry-run before allowing arm motion. |
 | Landmark example and occupancy-grid examples | Yes | Replace their poses/map with values measured in the deployment area. |
 | RTAB-Map localization database | No, environment-specific | Create a map once or copy an existing `.db` into `/ros2_ws/maps`. |
-| OpenClaw gateway and skill contract | Yes | OpenClaw itself is an external application. |
+| OpenClaw skill and compatibility gateway | Yes | The preferred Iliyas ABot Agent Server and OpenClaw application are external. |
 | Physical end-to-end validation | No | Must be performed by an operator with the robot and an emergency stop. |
 
 In short: the repository is **software-complete for the maintained workflow**,
@@ -42,11 +42,12 @@ flowchart LR
   N["Nav2\ndry-run or drive"]
   P["Front PiPER MoveIt\ntrajectory bridge"]
   A["ArUco search\nwall approach/touch"]
-  API["Local API :8892"]
-  O["OpenClaw gateway :8893"]
+  API["Low-level API :8892"]
+  AG["ABot Agent Server :8893"]
+  O["OpenClaw gateway and TUI"]
 
   H --> M --> N
-  H --> P --> A --> API --> O
+  H --> P --> A --> API --> AG --> O
   H --> A
 ```
 
@@ -77,6 +78,9 @@ The image imports the exact revisions in [`dependencies.repos`](dependencies.rep
 and installs the remaining ROS dependencies. See
 [`docs/dependencies.md`](docs/dependencies.md) for the dependency policy.
 
+For the optional Iliyas ABot Agent Server and OpenClaw layer, see
+[`docs/iliyas_openclaw_integration.md`](docs/iliyas_openclaw_integration.md).
+
 ## 2. Start the container
 
 On the host, allow RViz to use the X display and start the named container:
@@ -101,7 +105,7 @@ export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 
 ## 3. Discover the robot devices
 
-Never assume Linux will preserve `can2`, `can3`, and `can4` numbering.
+Never assume Linux will preserve a particular `canN` assignment.
 
 ```bash
 ip -br link show type can
@@ -115,10 +119,10 @@ rs-enumerate-devices -s
 Set these deployment values using the interfaces and serial discovered above:
 
 ```text
-export BUNKER_CAN=canX             # 500 kbit/s
-export FRONT_PIPER_CAN=canY        # 1 Mbit/s
-export REAR_PIPER_CAN=canZ         # 1 Mbit/s, optional
-export FRONT_CAMERA_SERIAL=...
+export BUNKER_CAN=                 # discovered Bunker interface, 500 kbit/s
+export FRONT_PIPER_CAN=            # discovered front PiPER interface, 1 Mbit/s
+export REAR_PIPER_CAN=             # discovered rear PiPER interface, optional
+export FRONT_CAMERA_SERIAL=        # discovered D435i serial
 ```
 
 Use [`docs/can_discovery.md`](docs/can_discovery.md) to map stable USB adapter

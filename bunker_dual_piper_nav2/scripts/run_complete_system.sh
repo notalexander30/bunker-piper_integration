@@ -34,9 +34,13 @@ ROBOT_WS="${ROBOT_WS:-/home/dase-orin/ros2_ws}"
 source "/opt/ros/${ROS_DISTRO}/setup.bash"
 source "${ROBOT_WS}/install/setup.bash"
 
-if [[ "${START_HARDWARE_DRIVERS:-0}" == 1 && "${START_PIPER_DRIVERS:-1}" == 1 ]]; then
-  if [[ "${FRONT_PIPER_CAN:-}" == UNSET_* || "${REAR_PIPER_CAN:-}" == UNSET_* ]]; then
-    echo "ERROR: Set FRONT_PIPER_CAN and REAR_PIPER_CAN before hardware startup." >&2
+if [[ "${START_HARDWARE_DRIVERS:-0}" == 1 ]]; then
+  if [[ -z "${BUNKER_CAN:-}" ]]; then
+    echo "ERROR: Set BUNKER_CAN before hardware startup." >&2
+    exit 2
+  fi
+  if [[ "${START_PIPER_DRIVERS:-1}" == 1 && ( -z "${FRONT_PIPER_CAN:-}" || -z "${REAR_PIPER_CAN:-}" ) ]]; then
+    echo "ERROR: Set FRONT_PIPER_CAN and REAR_PIPER_CAN before PiPER startup." >&2
     exit 2
   fi
 fi
@@ -72,9 +76,9 @@ exec ros2 launch bunker_dual_piper_nav2 system_bringup.launch.py \
   start_hardware_drivers:="$(bool_word "${START_HARDWARE_DRIVERS:-0}")" \
   start_bunker_driver:="$(bool_word "${START_BUNKER_DRIVER:-1}")" \
   start_piper_drivers:="$(bool_word "${START_PIPER_DRIVERS:-1}")" \
-  bunker_can:="${BUNKER_CAN:-can3}" \
-  front_piper_can:="${FRONT_PIPER_CAN:-UNSET_FRONT_CAN}" \
-  rear_piper_can:="${REAR_PIPER_CAN:-UNSET_REAR_CAN}" \
+  bunker_can:="${BUNKER_CAN:-}" \
+  front_piper_can:="${FRONT_PIPER_CAN:-}" \
+  rear_piper_can:="${REAR_PIPER_CAN:-}" \
   start_cameras:="$(bool_word "${START_CAMERAS:-1}")" \
   launch_front_camera:="$(bool_word "${START_FRONT_CAMERA:-1}")" \
   launch_rear_camera:="$(bool_word "${START_REAR_CAMERA:-0}")" \

@@ -96,8 +96,8 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "memory_file", default_value="/root/vlm_results/semantic_demo.json"
             ),
-            DeclareLaunchArgument("bunker_port", default_value="can3"),
-            DeclareLaunchArgument("arm_can_port", default_value="can2"),
+            DeclareLaunchArgument("bunker_port", default_value=""),
+            DeclareLaunchArgument("arm_can_port", default_value=""),
             DeclareLaunchArgument("serial_no", default_value="261222075829"),
             DeclareLaunchArgument("configure_can", default_value="false"),
             DeclareLaunchArgument("imu_gate_timeout", default_value="30.0"),

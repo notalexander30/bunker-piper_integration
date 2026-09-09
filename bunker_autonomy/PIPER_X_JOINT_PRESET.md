@@ -1,6 +1,6 @@
 # PiPER-X joint preset runner
 
-This runner is for the rear PiPER-X arm on `can3`. It is separate from the front PiPER arm on `can2`.
+This runner is for the rear PiPER-X arm on `REAR_PIPER_CAN`. It is separate from the front PiPER arm on `FRONT_PIPER_CAN`.
 
 ## CAN setup
 
@@ -11,16 +11,16 @@ cd /ros2_ws
 source /opt/ros/humble/setup.bash
 source /ros2_ws/install/setup.bash
 
-ip link set can3 down 2>/dev/null || true
-ip link set can3 type can bitrate 1000000 restart-ms 100
-ip link set can3 up
-ip -details -statistics link show can3
+ip link set REAR_PIPER_CAN down 2>/dev/null || true
+ip link set REAR_PIPER_CAN type can bitrate 1000000 restart-ms 100
+ip link set REAR_PIPER_CAN up
+ip -details -statistics link show REAR_PIPER_CAN
 ```
 
 Check frames:
 
 ```bash
-candump can3
+candump REAR_PIPER_CAN
 ```
 
 ## Launch driver only
@@ -33,7 +33,7 @@ source /opt/ros/humble/setup.bash
 source /ros2_ws/install/setup.bash
 
 ros2 launch bunker_autonomy piper_x_joint_preset_bringup.launch.py \
-  can_port:=can3 \
+  can_port:=REAR_PIPER_CAN \
   run_preset:=false \
   allow_motion:=false
 ```
@@ -97,7 +97,7 @@ source /opt/ros/humble/setup.bash
 source /ros2_ws/install/setup.bash
 
 ros2 launch bunker_autonomy piper_x_joint_preset_bringup.launch.py \
-  can_port:=can3 \
+  can_port:=REAR_PIPER_CAN \
   speed_percent:=5 \
   preset_file:=/ros2_ws/src/bunker_autonomy/config/piper_x_joint_preset.yaml \
   run_preset:=true \

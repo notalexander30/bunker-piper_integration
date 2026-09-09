@@ -37,11 +37,11 @@ def validate_piper_can(context):
     if not re.search(r'<[^>]*\bUP\b[^>]*>', details):
         raise RuntimeError(
             f"PiPER CAN interface '{interface}' is DOWN. Run: "
-            'ros2 run bunker_slam_bringup configure_can.sh can3 can4 can2')
+            'rerun configure_can.sh with the discovered PiPER and Bunker interfaces')
     if not re.search(r'\bbitrate\s+1000000\b', details):
         raise RuntimeError(
             f"PiPER CAN interface '{interface}' is not at 1000000 bit/s. "
-            'Run: ros2 run bunker_slam_bringup configure_can.sh can3 can4 can2')
+            'Rerun configure_can.sh with the discovered PiPER and Bunker interfaces')
     return [LogInfo(msg=(
         f'PiPER CAN preflight passed: {interface} is UP at 1000000 bit/s.'))]
 
@@ -80,10 +80,10 @@ def generate_launch_description():
     )
     return LaunchDescription([
         DeclareLaunchArgument(
-            'can_port', default_value='can3',
+            'can_port', default_value='',
             description=(
                 'Serial-verified PiPER SocketCAN interface. Resolve it before '
-                'launch; the current rear-arm navigation adapter is can3.')),
+                'launch; no interface is selected by default.')),
         DeclareLaunchArgument(
             'speed_percent', default_value='25',
             description='PiPER speed limit for the initialization move.'),

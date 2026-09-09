@@ -53,7 +53,7 @@ following remain site configuration, not confirmed facts:
 - physical CAN assignment for both PiPER arms and the Bunker;
 - whether the selected `front_piper_can` and `rear_piper_can` match the
   physical front/rear arm labels. Current operator-provided PiPER CAN
-  assignment is front `can2` and rear `can3`;
+  assignment is front `FRONT_PIPER_CAN` and rear `REAR_PIPER_CAN`;
 - the exact existing RTAB-Map launch filename;
 - the Bunker driver's live odometry/frame names;
 - both D435i serial numbers;
@@ -84,8 +84,8 @@ to the combined URDF and visible in RViz:
 
 ```bash
 ros2 launch bunker_dual_piper_nav2 dual_piper_bringup.launch.py \
-  rear_piper_can:=can3 \
-  front_piper_can:=can2 \
+  rear_piper_can:=REAR_PIPER_CAN \
+  front_piper_can:=FRONT_PIPER_CAN \
   run_initial_pose:=false \
   allow_piper_motion:=false \
   piper_control_enabled:=true \
@@ -110,15 +110,15 @@ initial pose, opt in explicitly:
 
 ```bash
 ros2 launch bunker_dual_piper_nav2 dual_piper_bringup.launch.py \
-  rear_piper_can:=can3 \
-  front_piper_can:=can2 \
+  rear_piper_can:=REAR_PIPER_CAN \
+  front_piper_can:=FRONT_PIPER_CAN \
   piper_control_enabled:=true \
   run_initial_pose:=true \
   allow_piper_motion:=true \
   start_rviz:=true
 ```
 
-Current robot mapping is front PiPER on `can2` and rear PiPER on `can3`. If
+Current robot mapping is front PiPER on `FRONT_PIPER_CAN` and rear PiPER on `REAR_PIPER_CAN`. If
 the physical adapters are moved, update `front_piper_can` and `rear_piper_can`
 from the serial-verified SocketCAN names.
 
@@ -171,7 +171,7 @@ cd /home/dase-orin/ros2_ws/src/bunker_dual_piper_nav2
 bash scripts/run_complete_system.sh --debug
 ```
 
-The script can start the Bunker driver, both PiPER drivers on `can2`/`can3`
+The script can start the Bunker driver, both PiPER drivers on `FRONT_PIPER_CAN`/`REAR_PIPER_CAN`
 (with automatic arm enable disabled), the selected D435i cameras, your existing
 RTAB-Map launch, your existing YOLO launch, robot state publisher, Nav2 and
 RViz. Nav2 velocity is clamped and routed to `/cmd_vel_debug`, so an RViz goal
@@ -335,8 +335,8 @@ selects the rear RealSense during a `door -> home` reverse trip:
 /rear_camera/aligned_depth_to_color/image_raw
 ```
 
-The rear camera is the D435i with serial `261222077434`; the front camera is
-`243322074578`.
+The rear camera is the D435i with serial `REAR_CAMERA_SERIAL`; the front camera is
+`FRONT_CAMERA_SERIAL`.
 
 The current Nav2 speed envelope is symmetric for forward and reverse:
 

@@ -10,8 +10,8 @@ Use this runbook for:
 - Docker-based ROS 2 Humble startup.
 - Front camera topics under `/front_camera/*`.
 - Rear camera topics under `/rear_camera/*`.
-- Front D435i serial `243322074578`.
-- Rear D435i serial `261222077434`.
+- Front D435i serial `FRONT_CAMERA_SERIAL`.
+- Rear D435i serial `REAR_CAMERA_SERIAL`.
 - RTAB-Map mapping and localization.
 - Bunker `/odom` from the base driver.
 - Safety-gated Nav2 dry-run and drive modes.
@@ -47,8 +47,8 @@ docker exec -it \
 Current RealSense serials checked with `rs-enumerate-devices -s`:
 
 ```text
-front camera /front_camera  243322074578  old known D435i, mapping RGB-D camera
-rear camera  /rear_camera   261222077434  newer second D435i
+front camera /front_camera  FRONT_CAMERA_SERIAL  old known D435i, mapping RGB-D camera
+rear camera  /rear_camera   REAR_CAMERA_SERIAL  newer second D435i
 ```
 
 ### Step 0.5: Rebuild After Any Source Change
@@ -169,7 +169,7 @@ ros2 topic list
 
 ### Step 3: Verify CAN By Serial Before Launching ROS Drivers
 
-Never trust only `can2`, `can3`, or `can4`; confirm serials:
+Never trust only `FRONT_PIPER_CAN`, `REAR_PIPER_CAN`, or `BUNKER_CAN`; confirm serials:
 
 ```bash
 for n in /sys/class/net/can*; do
@@ -184,26 +184,26 @@ done
 Current expected mapping:
 
 ```text
-front PiPER  can2  serial 004E002B4148570A20343133  1000000 bit/s
-rear PiPER   can3  serial 0036001F4148570A20343133  1000000 bit/s
-Bunker       can4  serial 001D00255443570A20393433  500000 bit/s
+front PiPER  FRONT_PIPER_CAN  serial FRONT_PIPER_ADAPTER_SERIAL  1000000 bit/s
+rear PiPER   REAR_PIPER_CAN  serial REAR_PIPER_ADAPTER_SERIAL  1000000 bit/s
+Bunker       BUNKER_CAN  serial BUNKER_ADAPTER_SERIAL  500000 bit/s
 ```
 
 Configure CAN:
 
 ```bash
-ros2 run bunker_slam_bringup configure_can.sh can2 can4 can3
+ros2 run bunker_slam_bringup configure_can.sh FRONT_PIPER_CAN BUNKER_CAN REAR_PIPER_CAN
 ```
 
 Check passive traffic:
 
 ```bash
-timeout 5 candump -L can2
-timeout 5 candump -L can3
-timeout 5 candump -L can4
+timeout 5 candump -L FRONT_PIPER_CAN
+timeout 5 candump -L REAR_PIPER_CAN
+timeout 5 candump -L BUNKER_CAN
 ```
 
-Do not continue to Nav2 if Bunker `can4` is `ERROR-PASSIVE`, `BUS-OFF`, has
+Do not continue to Nav2 if Bunker `BUNKER_CAN` is `ERROR-PASSIVE`, `BUS-OFF`, has
 `RTNETLINK answers: Broken pipe`, or shows no Bunker frames in `candump`.
 
 ### Step 4: Start Terminal 1 Hardware
@@ -212,20 +212,20 @@ Run this once:
 
 ```bash
 ros2 launch bunker_slam_bringup terminal1_sensors.launch.py \
-  arm_can:=can2 \
-  bunker_can:=can4 \
-  rear_piper_can:=can3 \
-  front_piper_can:=can2 \
+  arm_can:=FRONT_PIPER_CAN \
+  bunker_can:=BUNKER_CAN \
+  rear_piper_can:=REAR_PIPER_CAN \
+  front_piper_can:=FRONT_PIPER_CAN \
   launch_front_camera:=true \
   launch_rear_camera:=true \
-  front_camera_serial:=243322074578 \
-  rear_camera_serial:=261222077434 \
+  front_camera_serial:=FRONT_CAMERA_SERIAL \
+  rear_camera_serial:=REAR_CAMERA_SERIAL \
   configure_can:=true \
   start_piper_drivers:=true \
   piper_control_enabled:=true \
   run_piper_initial_pose:=true \
   allow_piper_motion:=true \
-  h30_serial_port:=/dev/serial/by-id/usb-WCH.CN_USB_Single_Serial_0003-if00 \
+  h30_serial_port:=H30_SERIAL_PORT \
   h30_baud_rate:=460800 \
   h30_frame_id:=imu_link \
   start_ekf:=false
@@ -365,7 +365,7 @@ Live Docker check on 2026-08-14 in `trystan-bunker-navigation`:
 
 - Terminal 1, both PiPER drivers, robot TF, Bunker `/odom`, RTAB-Map, and both
   RGB-D sync nodes were running at the same time.
-- CAN links were healthy: `can2` and `can3` at 1 Mbit/s for PiPER, `can4` at
+- CAN links were healthy: `FRONT_PIPER_CAN` and `REAR_PIPER_CAN` at 1 Mbit/s for PiPER, `BUNKER_CAN` at
   500 kbit/s for Bunker, all `ERROR-ACTIVE`.
 - `/odom` published around 30 Hz and `/joint_states` published from the dual
   PiPER prefixer.
@@ -706,7 +706,7 @@ the robot nose pointed back toward the door and lets Nav2 command negative
 around first.
 
 During that reverse-home trip, the active depth safety camera switches from the
-front D435i serial `243322074578` to the rear D435i serial `261222077434`
+front D435i serial `FRONT_CAMERA_SERIAL` to the rear D435i serial `REAR_CAMERA_SERIAL`
 through the rear camera topic:
 
 ```text
@@ -865,8 +865,8 @@ Current two-PiPER bringup for URDF/RViz inspection:
 
 ```bash
 ros2 launch bunker_dual_piper_nav2 dual_piper_bringup.launch.py \
-  rear_piper_can:=can3 \
-  front_piper_can:=can2 \
+  rear_piper_can:=REAR_PIPER_CAN \
+  front_piper_can:=FRONT_PIPER_CAN \
   run_initial_pose:=false \
   allow_piper_motion:=true \
   piper_control_enabled:=true \
@@ -882,8 +882,8 @@ For a headless two-PiPER node bringup without RViz and without arm motion:
 
 ```bash
 ros2 launch bunker_dual_piper_nav2 dual_piper_bringup.launch.py \
-  rear_piper_can:=can3 \
-  front_piper_can:=can2 \
+  rear_piper_can:=REAR_PIPER_CAN \
+  front_piper_can:=FRONT_PIPER_CAN \
   configure_piper_can:=true \
   piper_control_enabled:=true \
   run_initial_pose:=false \
@@ -900,24 +900,24 @@ ros2 topic echo --once /rear_piper/feedback/joint_states
 ros2 topic echo --once /joint_states
 ```
 
-The low-level hardware driver defaults also use `rear_piper_can:=can3` and
-`front_piper_can:=can2`, so this mapping is the default unless you override it.
+The low-level hardware driver defaults also use `rear_piper_can:=REAR_PIPER_CAN` and
+`front_piper_can:=FRONT_PIPER_CAN`, so this mapping is the default unless you override it.
 
 Only after confirming the CAN/bus setup and keeping the area clear, the same
 launch can command both arms to the documented initial pose:
 
 ```bash
 ros2 launch bunker_dual_piper_nav2 dual_piper_bringup.launch.py \
-  rear_piper_can:=can3 \
-  front_piper_can:=can2 \
+  rear_piper_can:=REAR_PIPER_CAN \
+  front_piper_can:=FRONT_PIPER_CAN \
   piper_control_enabled:=true \
   run_initial_pose:=true \
   allow_piper_motion:=true \
   start_rviz:=true
 ```
 
-Current robot mapping is front PiPER on `can2`, rear PiPER on `can3`, and
-Bunker on `can4`.
+Current robot mapping is front PiPER on `FRONT_PIPER_CAN`, rear PiPER on `REAR_PIPER_CAN`, and
+Bunker on `BUNKER_CAN`.
 
 ## Stable Startup Layout
 
@@ -994,20 +994,20 @@ Run this once for every mode:
 
 ```bash
 ros2 launch bunker_slam_bringup terminal1_sensors.launch.py \
-  arm_can:=can2 \
-  bunker_can:=can4 \
-  rear_piper_can:=can3 \
-  front_piper_can:=can2 \
+  arm_can:=FRONT_PIPER_CAN \
+  bunker_can:=BUNKER_CAN \
+  rear_piper_can:=REAR_PIPER_CAN \
+  front_piper_can:=FRONT_PIPER_CAN \
   launch_front_camera:=true \
   launch_rear_camera:=true \
-  front_camera_serial:=243322074578 \
-  rear_camera_serial:=261222077434 \
+  front_camera_serial:=FRONT_CAMERA_SERIAL \
+  rear_camera_serial:=REAR_CAMERA_SERIAL \
   configure_can:=true \
   start_piper_drivers:=true \
   piper_control_enabled:=true \
   run_piper_initial_pose:=true \
   allow_piper_motion:=true \
-  h30_serial_port:=/dev/serial/by-id/usb-WCH.CN_USB_Single_Serial_0003-if00 \
+  h30_serial_port:=H30_SERIAL_PORT \
   h30_baud_rate:=460800 \
   h30_frame_id:=imu_link \
   start_ekf:=false
@@ -1017,20 +1017,20 @@ Optional ArUco debug from the same Terminal 1 hardware launch:
 
 ```bash
 ros2 launch bunker_slam_bringup terminal1_sensors.launch.py \
-  arm_can:=can2 \
-  bunker_can:=can4 \
-  rear_piper_can:=can3 \
-  front_piper_can:=can2 \
+  arm_can:=FRONT_PIPER_CAN \
+  bunker_can:=BUNKER_CAN \
+  rear_piper_can:=REAR_PIPER_CAN \
+  front_piper_can:=FRONT_PIPER_CAN \
   launch_front_camera:=true \
   launch_rear_camera:=true \
-  front_camera_serial:=243322074578 \
-  rear_camera_serial:=261222077434 \
+  front_camera_serial:=FRONT_CAMERA_SERIAL \
+  rear_camera_serial:=REAR_CAMERA_SERIAL \
   configure_can:=true \
   start_piper_drivers:=true \
   piper_control_enabled:=true \
   run_piper_initial_pose:=true \
   allow_piper_motion:=true \
-  h30_serial_port:=/dev/serial/by-id/usb-WCH.CN_USB_Single_Serial_0003-if00 \
+  h30_serial_port:=H30_SERIAL_PORT \
   h30_baud_rate:=460800 \
   h30_frame_id:=imu_link \
   start_ekf:=false \
@@ -1377,9 +1377,9 @@ Canonical device roles by serial:
 
 | Device | USB serial | Interface | Bitrate |
 |---|---:|---:|---:|
-| Front PiPER | `004E002B4148570A20343133` | `can2` | 1,000,000 bit/s |
-| Rear PiPER | `0036001F4148570A20343133` | `can3` | 1,000,000 bit/s |
-| Bunker | `001D00255443570A20393433` | `can4` | 500,000 bit/s |
+| Front PiPER | `FRONT_PIPER_ADAPTER_SERIAL` | `FRONT_PIPER_CAN` | 1,000,000 bit/s |
+| Rear PiPER | `REAR_PIPER_ADAPTER_SERIAL` | `REAR_PIPER_CAN` | 1,000,000 bit/s |
+| Bunker | `BUNKER_ADAPTER_SERIAL` | `BUNKER_CAN` | 500,000 bit/s |
 
 Check the current mapping:
 
@@ -1398,7 +1398,7 @@ Configure CAN manually using the actual interface names from the serial check.
 For the current observed mapping:
 
 ```bash
-ros2 run bunker_slam_bringup configure_can.sh can2 can4 can3
+ros2 run bunker_slam_bringup configure_can.sh FRONT_PIPER_CAN BUNKER_CAN REAR_PIPER_CAN
 ```
 
 Argument order:
@@ -1407,8 +1407,8 @@ Argument order:
 configure_can.sh FRONT_PIPER_CAN_INTERFACE BUNKER_CAN_INTERFACE REAR_PIPER_CAN_INTERFACE
 ```
 
-So `configure_can.sh can2 can4 can3` means front PiPER on `can2`, Bunker on
-`can4`, and rear PiPER on `can3`.
+So `configure_can.sh FRONT_PIPER_CAN BUNKER_CAN REAR_PIPER_CAN` means front PiPER on `FRONT_PIPER_CAN`, Bunker on
+`BUNKER_CAN`, and rear PiPER on `REAR_PIPER_CAN`.
 Do not use reversed order; that can put
 the PiPER adapter at the Bunker bitrate and the Bunker adapter at the PiPER
 bitrate.
@@ -1421,30 +1421,30 @@ place.
 Check passive traffic:
 
 ```bash
-timeout 5 candump -L can2
-timeout 5 candump -L can3
-timeout 5 candump -L can4
+timeout 5 candump -L FRONT_PIPER_CAN
+timeout 5 candump -L REAR_PIPER_CAN
+timeout 5 candump -L BUNKER_CAN
 ```
 
 `candump` is passive. It can run while other drivers are reading the same CAN interface.
 
 If the Bunker driver reports `Detected protocol: UNKNOWN` or `/odom` is missing, verify that the Bunker side is really the 500 kbit/s bus. If the USB mapping changed, fix the command by serial identity, not by guessing.
-If `can4` remains `ERROR-PASSIVE` after running the setup command, do not start
-Nav2 yet. First make `candump -L can4` show Bunker status frames.
+If `BUNKER_CAN` remains `ERROR-PASSIVE` after running the setup command, do not start
+Nav2 yet. First make `candump -L BUNKER_CAN` show Bunker status frames.
 
 If launch aborts with:
 
 ```text
-configure_can.sh can2 can4 can4
+configure_can.sh FRONT_PIPER_CAN BUNKER_CAN BUNKER_CAN
 error: PiPER and Bunker must use distinct CAN interfaces
 ```
 
 the rear PiPER argument is still wrong. That command means both Bunker and rear
-PiPER were set to `can4`. Use `front_piper_can:=can2`, or omit the argument so
-the current launch default supplies `can2`:
+PiPER were set to `BUNKER_CAN`. Use `front_piper_can:=FRONT_PIPER_CAN`, or omit the argument so
+the current launch default supplies `FRONT_PIPER_CAN`:
 
 ```bash
-ros2 run bunker_slam_bringup configure_can.sh can2 can4 can3
+ros2 run bunker_slam_bringup configure_can.sh FRONT_PIPER_CAN BUNKER_CAN REAR_PIPER_CAN
 ```
 
 The active startup environment only requires raw image transport for the
@@ -1518,11 +1518,11 @@ Jetson reboot is only a last resort after the camera cannot re-enumerate.
 This can physically move both arms at the same time. Keep the robot clear.
 
 ```bash
-ros2 run bunker_slam_bringup configure_can.sh can2 can4 can3
+ros2 run bunker_slam_bringup configure_can.sh FRONT_PIPER_CAN BUNKER_CAN REAR_PIPER_CAN
 
 ros2 launch bunker_dual_piper_nav2 dual_piper_bringup.launch.py \
-  rear_piper_can:=can3 \
-  front_piper_can:=can2 \
+  rear_piper_can:=REAR_PIPER_CAN \
+  front_piper_can:=FRONT_PIPER_CAN \
   configure_piper_can:=false \
   piper_control_enabled:=true \
   run_initial_pose:=true \
@@ -1543,11 +1543,11 @@ What it does:
 - Publishes RGB, aligned depth, camera info, and point cloud topics for each
   enabled camera.
 - Can optionally start the OpenCV ArUco detector for 5 cm marker testing.
-- Configures front PiPER `can2` and rear PiPER `can3` at 1 Mbit/s, and Bunker `can4` at 500 kbit/s.
+- Configures front PiPER `FRONT_PIPER_CAN` and rear PiPER `REAR_PIPER_CAN` at 1 Mbit/s, and Bunker `BUNKER_CAN` at 500 kbit/s.
 - Starts both PiPER drivers by default so `/front_piper/feedback/joint_states`
   and `/rear_piper/feedback/joint_states` feed the prefixed `/joint_states`
   stream used by the URDF in RViz.
-- Starts the Bunker Mini driver on `can4`.
+- Starts the Bunker Mini driver on `BUNKER_CAN`.
 - Publishes raw Bunker odometry directly on `/odom` when `start_ekf:=false`.
 - In this documented mode, EKF is disabled; H30 IMU remains available as a diagnostic stream.
 - Publishes robot URDF and static camera/arm TF.
@@ -1558,20 +1558,20 @@ Start all hardware:
 
 ```bash
 ros2 launch bunker_slam_bringup terminal1_sensors.launch.py \
-  arm_can:=can2 \
-  bunker_can:=can4 \
-  rear_piper_can:=can3 \
-  front_piper_can:=can2 \
+  arm_can:=FRONT_PIPER_CAN \
+  bunker_can:=BUNKER_CAN \
+  rear_piper_can:=REAR_PIPER_CAN \
+  front_piper_can:=FRONT_PIPER_CAN \
   launch_front_camera:=true \
   launch_rear_camera:=true \
-  front_camera_serial:=243322074578 \
-  rear_camera_serial:=261222077434 \
+  front_camera_serial:=FRONT_CAMERA_SERIAL \
+  rear_camera_serial:=REAR_CAMERA_SERIAL \
   configure_can:=true \
   start_piper_drivers:=true \
   piper_control_enabled:=true \
   run_piper_initial_pose:=true \
   allow_piper_motion:=true \
-  h30_serial_port:=/dev/serial/by-id/usb-WCH.CN_USB_Single_Serial_0003-if00 \
+  h30_serial_port:=H30_SERIAL_PORT \
   h30_baud_rate:=460800 \
   h30_frame_id:=imu_link \
   start_ekf:=false
@@ -1580,7 +1580,7 @@ ros2 launch bunker_slam_bringup terminal1_sensors.launch.py \
 Equivalent single-line command:
 
 ```bash
-ros2 launch bunker_slam_bringup terminal1_sensors.launch.py arm_can:=can2 bunker_can:=can4 rear_piper_can:=can3 front_piper_can:=can2 launch_front_camera:=true launch_rear_camera:=true front_camera_serial:=243322074578 rear_camera_serial:=261222077434 configure_can:=true start_piper_drivers:=true piper_control_enabled:=true run_piper_initial_pose:=true allow_piper_motion:=true start_ekf:=false
+ros2 launch bunker_slam_bringup terminal1_sensors.launch.py arm_can:=FRONT_PIPER_CAN bunker_can:=BUNKER_CAN rear_piper_can:=REAR_PIPER_CAN front_piper_can:=FRONT_PIPER_CAN launch_front_camera:=true launch_rear_camera:=true front_camera_serial:=FRONT_CAMERA_SERIAL rear_camera_serial:=REAR_CAMERA_SERIAL configure_can:=true start_piper_drivers:=true piper_control_enabled:=true run_piper_initial_pose:=true allow_piper_motion:=true start_ekf:=false
 ```
 
 To command both PiPER arms to the documented initial/navigation pose, first
@@ -1588,16 +1588,16 @@ confirm the CAN roles and keep the area clear, then opt in explicitly:
 
 ```bash
 ros2 launch bunker_slam_bringup terminal1_sensors.launch.py \
-  arm_can:=can2 \
-  bunker_can:=can4 \
-  rear_piper_can:=can3 \
-  front_piper_can:=can2 \
+  arm_can:=FRONT_PIPER_CAN \
+  bunker_can:=BUNKER_CAN \
+  rear_piper_can:=REAR_PIPER_CAN \
+  front_piper_can:=FRONT_PIPER_CAN \
   configure_can:=true \
   start_piper_drivers:=true \
   piper_control_enabled:=true \
   run_piper_initial_pose:=true \
   allow_piper_motion:=true \
-  h30_serial_port:=/dev/serial/by-id/usb-WCH.CN_USB_Single_Serial_0003-if00 \
+  h30_serial_port:=H30_SERIAL_PORT \
   h30_baud_rate:=460800 \
   h30_frame_id:=imu_link \
   start_ekf:=false
@@ -1619,10 +1619,10 @@ Optional OpenCV ArUco test from Terminal 1:
 
 ```bash
 ros2 launch bunker_slam_bringup terminal1_sensors.launch.py \
-  arm_can:=can2 \
-  bunker_can:=can4 \
-  rear_piper_can:=can3 \
-  front_piper_can:=can2 \
+  arm_can:=FRONT_PIPER_CAN \
+  bunker_can:=BUNKER_CAN \
+  rear_piper_can:=REAR_PIPER_CAN \
+  front_piper_can:=FRONT_PIPER_CAN \
   configure_can:=true \
   start_piper_drivers:=true \
   piper_control_enabled:=true \
@@ -1655,8 +1655,8 @@ Expected important topics:
 | `/rear_camera/color/camera_info` | RealSense | RTAB-Map RGB-D sync | Rear camera calibration/intrinsics |
 | `/rear_camera/aligned_depth_to_color/image_raw` | RealSense | RTAB-Map RGB-D sync | Rear depth image aligned to RGB |
 | `/rear_camera/depth/color/points` | RealSense | RViz diagnostic / optional rear depth safety | Rear registered depth point cloud |
-| `/front_piper/feedback/joint_states` | Front PiPER driver on `can2` | Joint-state prefixer | Raw front arm feedback |
-| `/rear_piper/feedback/joint_states` | Rear PiPER driver on `can3` | Joint-state prefixer | Raw rear arm feedback |
+| `/front_piper/feedback/joint_states` | Front PiPER driver on `FRONT_PIPER_CAN` | Joint-state prefixer | Raw front arm feedback |
+| `/rear_piper/feedback/joint_states` | Rear PiPER driver on `REAR_PIPER_CAN` | Joint-state prefixer | Raw rear arm feedback |
 | `/joint_states` | Joint-state prefixer | robot_state_publisher, RViz | Prefixed front/rear PiPER joint states for the URDF |
 | `/odom` | Bunker driver when `start_ekf:=false` | RTAB-Map, Nav2 | Raw Bunker odometry |
 | `/wheel/odom` | Not used in this mode | N/A | Only used when EKF is enabled |
@@ -1699,8 +1699,8 @@ Verified behavior on 2026-08-10:
 
 ## CAN Role Reminder
 
-- The current observed launch mapping is `arm_can:=can2`, `bunker_can:=can4`,
-  `rear_piper_can:=can3`, and `front_piper_can:=can2`. Re-check serials before
+- The current observed launch mapping is `arm_can:=FRONT_PIPER_CAN`, `bunker_can:=BUNKER_CAN`,
+  `rear_piper_can:=REAR_PIPER_CAN`, and `front_piper_can:=FRONT_PIPER_CAN`. Re-check serials before
   every hardware session.
 
 Expected important topics:
@@ -2070,7 +2070,7 @@ Complete time-limit mapping startup:
 
 ```bash
 # Terminal 1: hardware
-ros2 launch bunker_slam_bringup terminal1_sensors.launch.py arm_can:=can2 bunker_can:=can4 rear_piper_can:=can3 front_piper_can:=can2 launch_front_camera:=true launch_rear_camera:=true front_camera_serial:=243322074578 rear_camera_serial:=261222077434 configure_can:=true start_piper_drivers:=true piper_control_enabled:=true run_piper_initial_pose:=true allow_piper_motion:=true start_ekf:=false
+ros2 launch bunker_slam_bringup terminal1_sensors.launch.py arm_can:=FRONT_PIPER_CAN bunker_can:=BUNKER_CAN rear_piper_can:=REAR_PIPER_CAN front_piper_can:=FRONT_PIPER_CAN launch_front_camera:=true launch_rear_camera:=true front_camera_serial:=FRONT_CAMERA_SERIAL rear_camera_serial:=REAR_CAMERA_SERIAL configure_can:=true start_piper_drivers:=true piper_control_enabled:=true run_piper_initial_pose:=true allow_piper_motion:=true start_ekf:=false
 ```
 
 ```bash
@@ -2299,7 +2299,7 @@ Static inspection result:
 Current important caveat:
 
 - Terminal 1 starts both PiPER drivers by default, with front feedback from
-  `can3` and rear feedback from `can3`.
+  `REAR_PIPER_CAN` and rear feedback from `REAR_PIPER_CAN`.
 - The joint-state prefixer converts `/front_piper/feedback/joint_states` and
   `/rear_piper/feedback/joint_states` into prefixed `/joint_states` names for
   the URDF in RViz.
@@ -2378,10 +2378,10 @@ Blocking Nav2:
 
 - `/odom` does not publish.
 - `/cmd_vel` does not have the Bunker driver subscriber.
-- The Bunker driver starts on `can4`, reports `Detected protocol: UNKNOWN`, then exits.
-- `candump -L can2` shows active PiPER frames.
-- `candump -L can4` showed no Bunker feedback frames during the sample, even though `can4` is configured at 500 kbit/s.
-- On 2026-08-10, `can3` was also observed in `ERROR-PASSIVE`. The CAN setup
+- The Bunker driver starts on `BUNKER_CAN`, reports `Detected protocol: UNKNOWN`, then exits.
+- `candump -L FRONT_PIPER_CAN` shows active PiPER frames.
+- `candump -L BUNKER_CAN` showed no Bunker feedback frames during the sample, even though `BUNKER_CAN` is configured at 500 kbit/s.
+- On 2026-08-10, `REAR_PIPER_CAN` was also observed in `ERROR-PASSIVE`. The CAN setup
   script was updated to cycle a link in this stale/error state, but if it
   immediately returns to `ERROR-PASSIVE`, treat that as a Bunker bus-side issue.
 
@@ -2389,20 +2389,20 @@ Conclusion:
 
 - The ROS camera and RGB-D path are now usable.
 - Nav2 is still blocked before controller testing because Bunker odometry is unavailable.
-- Fix the physical/CAN side of Bunker `can4` first: power, cable, adapter assignment, bus connection, bitrate, and whether the Bunker base is actually transmitting status frames.
+- Fix the physical/CAN side of Bunker `BUNKER_CAN` first: power, cable, adapter assignment, bus connection, bitrate, and whether the Bunker base is actually transmitting status frames.
 
 ## Common problems
 
 | Symptom | Most likely cause | Check/fix |
 |---|---|---|
-| `/odom` missing | Bunker driver not initialized | Check CAN role/bitrate; Bunker should be `can4` at 500 kbit/s for the canonical setup |
-| `Detected protocol: UNKNOWN` | Bunker driver is not receiving valid Bunker feedback frames | Identify adapters by serial, rerun `configure_can.sh can2 can4 can3`, then confirm `candump -L can4` shows Bunker frames |
-| `can4` is `ERROR-PASSIVE` | CAN controller is seeing a bus error/no valid ACK/invalid physical bus state | Rerun `configure_can.sh can2 can4 can3`; if it returns to `ERROR-PASSIVE`, check Bunker power, e-stop, CAN H/L wiring, common ground, termination, and that the cable is connected to the serial-verified Bunker adapter |
-| `configure_can.sh can2 can4 can4` exits with distinct-interface error | Rear PiPER was still passed as `can4`, same as Bunker | Use `front_piper_can:=can2`; the correct manual setup is `configure_can.sh can2 can4 can3` |
+| `/odom` missing | Bunker driver not initialized | Check CAN role/bitrate; Bunker should be `BUNKER_CAN` at 500 kbit/s for the canonical setup |
+| `Detected protocol: UNKNOWN` | Bunker driver is not receiving valid Bunker feedback frames | Identify adapters by serial, rerun `configure_can.sh FRONT_PIPER_CAN BUNKER_CAN REAR_PIPER_CAN`, then confirm `candump -L BUNKER_CAN` shows Bunker frames |
+| `BUNKER_CAN` is `ERROR-PASSIVE` | CAN controller is seeing a bus error/no valid ACK/invalid physical bus state | Rerun `configure_can.sh FRONT_PIPER_CAN BUNKER_CAN REAR_PIPER_CAN`; if it returns to `ERROR-PASSIVE`, check Bunker power, e-stop, CAN H/L wiring, common ground, termination, and that the cable is connected to the serial-verified Bunker adapter |
+| `configure_can.sh FRONT_PIPER_CAN BUNKER_CAN BUNKER_CAN` exits with distinct-interface error | Rear PiPER was still passed as `BUNKER_CAN`, same as Bunker | Use `front_piper_can:=FRONT_PIPER_CAN`; the correct manual setup is `configure_can.sh FRONT_PIPER_CAN BUNKER_CAN REAR_PIPER_CAN` |
 | RealSense `compressed_pub`, `compressedDepth_pub`, or `No plugins found!` during abort | Launch shutdown after an earlier error invalidated the RealSense node context | Fix the earlier launch error first. The container can list the image transports; these lines are usually secondary |
 | RealSense `Device or resource busy` / `VIDIOC_S_FMT` | D435i USB/V4L device wedged or still recovering after a failed launch | Stop old camera launches, then recover only the camera with `ros2 run bunker_autonomy realsense_usb_recover`; restart Terminal 1 only if the camera node does not respawn. Terminal 1 defaults `reset_front_camera_usb:=true`, which resets the D435i before RealSense starts |
 | Watchdog says `No RealSense USB device is currently enumerated` | Linux cannot currently see the D435i, so there is no camera device to reset | Do not reboot the Jetson or restart Docker first. Check/replug camera cable or hub power, confirm `rs-enumerate-devices -s`, then restart only the camera/Terminal 1 launch if needed |
-| Running an old PiPER launch breaks CAN | Old command had reversed CAN arguments | Use `configure_can.sh can2 can4 can3`; front PiPER is `can2` at 1 Mbit/s, rear PiPER is `can3` at 1 Mbit/s, and Bunker is `can4` at 500 kbit/s |
+| Running an old PiPER launch breaks CAN | Old command had reversed CAN arguments | Use `configure_can.sh FRONT_PIPER_CAN BUNKER_CAN REAR_PIPER_CAN`; front PiPER is `FRONT_PIPER_CAN` at 1 Mbit/s, rear PiPER is `REAR_PIPER_CAN` at 1 Mbit/s, and Bunker is `BUNKER_CAN` at 500 kbit/s |
 | `sequence size exceeds remaining buffer` | DDS/domain pollution or stale participant | Kill stale nodes, use one domain, consider `ROS_LOCALHOST_ONLY=1` for local-only testing |
 | RGB works but no `/front_rgbd_image` or `/rear_rgbd_image` | Missing aligned depth or camera info for that camera | Check Terminal 1 topics and rates |
 | RViz `Frame [map] does not exist` | Localization/mapping not publishing map TF yet | Check RTAB-Map mapping/localization VS Code terminal-editor pane logs |

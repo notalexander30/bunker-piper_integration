@@ -173,13 +173,13 @@ def generate_launch_description():
         DeclareLaunchArgument('launch_rear_camera', default_value='false'),
         DeclareLaunchArgument(
             'front_camera_serial',
-            default_value='243322074578',
+            default_value='',
             description=(
                 'Front D435i serial; old known camera, used for mapping.'),
         ),
         DeclareLaunchArgument(
             'rear_camera_serial',
-            default_value='261222077434',
+            default_value='',
             description='Rear D435i serial; newer second camera.',
         ),
         camera_group(

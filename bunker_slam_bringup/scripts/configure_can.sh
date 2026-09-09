@@ -9,10 +9,9 @@ usage() {
 Usage: configure_can.sh [FRONT_PIPER_CAN_INTERFACE] [BUNKER_CAN_INTERFACE] [REAR_PIPER_CAN_INTERFACE]
 
 Defaults:
-  Both interfaces are resolved from their USB-adapter serial numbers.
-  Front PiPER: pass can2 explicitly on this robot, at 1,000,000 bit/s
-  Rear PiPER:  pass can3 explicitly on this robot, at 1,000,000 bit/s
-  Bunker:      serial 001D00255443570A20393433 at   500,000 bit/s
+  Interfaces are resolved from PIPER_CAN_USB_SERIAL and
+  BUNKER_CAN_USB_SERIAL. Alternatively, pass the discovered interface names
+  explicitly. PiPER uses 1,000,000 bit/s; Bunker uses 500,000 bit/s.
 
 The script validates both interfaces before changing either one. Existing links
 already UP at the requested bitrate and in ERROR-ACTIVE state are left running.

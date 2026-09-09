@@ -33,11 +33,14 @@ but they are not required by the maintained Nav-Man startup.
 
 ## OpenClaw integration
 
-The supported gateway is installed by piper_x_aruco_wall_approach and listens
-on 127.0.0.1:8893. The supported OpenClaw skill is included at
-openclaw/skills/piper-touch-marker/SKILL.md. Set PIPER_TOUCH_MARKER_SKILL to a
-different SKILL.md path if you want the test suite to validate another
-deployment copy against the same contract.
+The bundled compatibility gateway is installed by
+`piper_x_aruco_wall_approach`. The preferred Iliyas ABot Agent Server is an
+optional external checkout pinned separately in
+`optional_agent_dependencies.repos`; import it outside the ROS source tree to
+avoid a duplicate package. See `docs/iliyas_openclaw_integration.md`.
+
+The supported OpenClaw skill is included at
+`openclaw/skills/piper-touch-marker/SKILL.md`.
 
 ## Reproducibility
 

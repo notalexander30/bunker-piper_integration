@@ -11,8 +11,8 @@ with the front PiPER-X.
 
 ## Ownership and safety
 
-- Use the OpenClaw gateway at http://127.0.0.1:8893.
-- The gateway calls the lower PiPER API at http://127.0.0.1:8892.
+- Use the preferred Iliyas ABot Agent Server at http://127.0.0.1:8893.
+- The Agent Server calls the lower PiPER API at http://127.0.0.1:8892.
 - Never start a PiPER driver, camera, robot-state publisher, MoveIt stack,
   RTAB-Map instance, Nav2 stack, or TF publisher.
 - Never generate arbitrary MoveIt poses or trajectories.
@@ -24,23 +24,28 @@ with the front PiPER-X.
 ## Workflow
 
 1. Call GET http://127.0.0.1:8893/health.
-2. Confirm that the returned lower-level /health result is ready.
-3. Start with a dry-run request unless the operator explicitly requests motion.
-4. For physical motion, require execution_allowed: true and an explicit
+2. Confirm that its lower-level 8892 health result is ready.
+3. Acquire the required Agent Server lease.
+4. Start with a dry-run request unless the operator explicitly requests motion.
+5. For physical motion, require execution_allowed: true and an explicit
    execute request.
-5. Report success, stage, message, contact_confirmed, and completion_type.
+6. Report success, stage, message, contact_confirmed, and completion_type.
 
 The lower-level API pauses mapping work, enables the selected arm, and saves
 the current front-arm joint pose before arm motion. It then moves to the
 supported manipulation pose and executes the requested marker task.
 
-## Gateway endpoints
+## Preferred Agent Server endpoints
 
-- POST /openclaw/search_marker
-- POST /openclaw/approach_marker
-- POST /openclaw/touch_marker
-- POST /openclaw/retract
-- POST /openclaw/stop
+- POST /lease/acquire
+- POST /tools/search-marker
+- POST /tools/approach-marker
+- POST /tools/touch-marker
+- POST /tools/go-manipulation-pose
+- POST /tools/go-nav-pose
+- POST /tools/go-previous
+- POST /tools/go-found-marker
+- POST /tools/clear-active-piper-tasks
 
 ## Lower-level contract
 

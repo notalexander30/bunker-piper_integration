@@ -227,10 +227,10 @@ def generate_launch_description():
         DeclareLaunchArgument('bunker_port', default_value='auto'),
         DeclareLaunchArgument('arm_can_port', default_value='auto'),
         DeclareLaunchArgument(
-            'arm_can_usb_serial', default_value='004E002B4148570A20343133'),
+            'arm_can_usb_serial', default_value='FRONT_PIPER_ADAPTER_SERIAL'),
         DeclareLaunchArgument(
-            'bunker_can_usb_serial', default_value='001D00255443570A20393433'),
-        DeclareLaunchArgument('serial_no', default_value='243322074578'),
+            'bunker_can_usb_serial', default_value='BUNKER_ADAPTER_SERIAL'),
+        DeclareLaunchArgument('serial_no', default_value=''),
         DeclareLaunchArgument('enable_pointcloud', default_value='false',
                               choices=['true', 'false']),
         DeclareLaunchArgument('configure_can', default_value='true',
@@ -242,7 +242,7 @@ def generate_launch_description():
         DeclareLaunchArgument('start_rear_arm', default_value='false',
                               choices=['true', 'false']),
         DeclareLaunchArgument(
-            'rear_arm_can_port', default_value='can0',
+            'rear_arm_can_port', default_value='',
             description='Confirmed CAN interface for the physical rear PiPER.'),
         DeclareLaunchArgument(
             'joint_states_topic',

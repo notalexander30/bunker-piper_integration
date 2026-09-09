@@ -71,4 +71,5 @@ Then follow:
 - `bunker_slam_bringup/NAV_MAN_INTEGRATION_STARTUP.md`
 - `docs/openclaw_gateway.md`
 
-Use discovered `canX` names in launch arguments. Do not assume `can2`, `can3`, or `can4` on a new machine.
+Use discovered `canX` names in launch arguments. Do not assume a particular
+`canN` assignment on a new machine.

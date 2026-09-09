@@ -17,7 +17,7 @@ def generate_launch_description():
     bunker_launch = os.path.join(
         get_package_share_directory('bunker_base'), 'launch', 'bunker_base.launch.py')
     return LaunchDescription([
-        DeclareLaunchArgument('bunker_port', default_value='can3'),
+        DeclareLaunchArgument('bunker_port', default_value=''),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(bunker_launch),
             launch_arguments={

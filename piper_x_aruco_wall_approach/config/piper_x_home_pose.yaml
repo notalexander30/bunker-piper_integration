@@ -10,7 +10,7 @@ source_type: sensor_msgs/msg/JointState
 arm:
   arm_type: piper_x
   effector_type: none
-  can_port: front_can2_rear_can3
+  can_port: ""
 moveit:
   namespace: /front_piper
   planning_group: arm

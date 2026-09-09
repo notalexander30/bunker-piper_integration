@@ -1,6 +1,8 @@
 # CAN Discovery
 
-Do not assume that Linux `can0`, `can1`, `can2`, etc. stay attached to the same physical USB-CAN adapter. The public setup should discover the current `canX` names first, then pass those values into launch files.
+Do not assume that a Linux `canN` name stays attached to the same physical
+USB-CAN adapter. Discover the current interface names first, then pass those
+values into launch files.
 
 ## List Visible CAN Links
 

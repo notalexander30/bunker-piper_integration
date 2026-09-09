@@ -36,14 +36,14 @@ important part is Terminal 1 with EKF enabled:
 
 ```bash
 ros2 launch bunker_slam_bringup terminal1_sensors.launch.py \
-  arm_can:=can2 \
-  bunker_can:=can4 \
-  rear_piper_can:=can3 \
-  front_piper_can:=can2 \
+  arm_can:=FRONT_PIPER_CAN \
+  bunker_can:=BUNKER_CAN \
+  rear_piper_can:=REAR_PIPER_CAN \
+  front_piper_can:=FRONT_PIPER_CAN \
   launch_front_camera:=true \
   launch_rear_camera:=true \
-  front_camera_serial:=243322074578 \
-  rear_camera_serial:=261222077434 \
+  front_camera_serial:=FRONT_CAMERA_SERIAL \
+  rear_camera_serial:=REAR_CAMERA_SERIAL \
   configure_can:=true \
   start_piper_drivers:=true \
   piper_control_enabled:=true \

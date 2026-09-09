@@ -24,7 +24,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument(
-            'serial_no', default_value='243322074578',
+            'serial_no', default_value='',
             description='Discovered Intel RealSense D435i serial number.'),
         DeclareLaunchArgument(
             'enable_pointcloud', default_value='false',

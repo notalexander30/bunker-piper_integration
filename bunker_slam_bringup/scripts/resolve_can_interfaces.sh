@@ -4,8 +4,8 @@
 set -Eeuo pipefail
 export LC_ALL=C
 
-arm_serial="${PIPER_CAN_USB_SERIAL:-004E002B4148570A20343133}"
-bunker_serial="${BUNKER_CAN_USB_SERIAL:-001D00255443570A20393433}"
+arm_serial="${PIPER_CAN_USB_SERIAL:-}"
+bunker_serial="${BUNKER_CAN_USB_SERIAL:-}"
 output="plain"
 
 usage() {
@@ -30,6 +30,11 @@ case "${1:-}" in
   -h|--help) usage; exit 0 ;;
   *) usage >&2; exit 2 ;;
 esac
+
+if [[ -z "$arm_serial" || -z "$bunker_serial" ]]; then
+  echo 'error: set PIPER_CAN_USB_SERIAL and BUNKER_CAN_USB_SERIAL' >&2
+  exit 2
+fi
 
 serial_for_interface() {
   local interface="$1" path

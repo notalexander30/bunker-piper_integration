@@ -20,12 +20,28 @@ def generate_launch_description():
         DeclareLaunchArgument('launch_chassis', default_value='false'),
         DeclareLaunchArgument('launch_rviz', default_value='true'),
         DeclareLaunchArgument('detector_device', default_value='0'),
-        IncludeLaunchDescription(PythonLaunchDescriptionSource(os.path.join(base_share, 'launch', 'bunker_base.launch.py')),
-          condition=IfCondition(LaunchConfiguration('launch_chassis')),
-          launch_arguments={'port_name': 'can3', 'is_bunker_mini': 'true'}.items()),
-        IncludeLaunchDescription(PythonLaunchDescriptionSource(os.path.join(share, 'launch', 'realsense_d435i.launch.py')),
-          # The door mission uses its own YOLO/depth RViz layout below.
-          launch_arguments={'camera_rviz': 'false'}.items()),
+        DeclareLaunchArgument('bunker_can', default_value=''),
+        DeclareLaunchArgument('front_camera_serial', default_value=''),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(base_share, 'launch', 'bunker_base.launch.py')
+            ),
+            condition=IfCondition(LaunchConfiguration('launch_chassis')),
+            launch_arguments={
+                'port_name': LaunchConfiguration('bunker_can'),
+                'is_bunker_mini': 'true',
+            }.items(),
+        ),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(share, 'launch', 'realsense_d435i.launch.py')
+            ),
+            # The door mission uses its own YOLO/depth RViz layout below.
+            launch_arguments={
+                'camera_rviz': 'false',
+                'serial_no': LaunchConfiguration('front_camera_serial'),
+            }.items(),
+        ),
         # Dedicated YOLO-only launch. It can also be started independently for
         # one-component-per-terminal debugging.
         IncludeLaunchDescription(
@@ -59,9 +75,16 @@ def generate_launch_description():
             arguments=['-d', rviz_config],
             condition=IfCondition(LaunchConfiguration('launch_rviz')),
         ),
-        IncludeLaunchDescription(PythonLaunchDescriptionSource(os.path.join(share, 'launch', 'find_trash_can_demo.launch.py')),
-          launch_arguments={'config_file': config, 'mode': LaunchConfiguration('mode'),
-                            'navigation_mode': 'depth_only',
-                            'depth_image_topic': '/camera/camera/aligned_depth_to_color/image_raw',
-                            'launch_vlm_monitor': 'false'}.items()),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(share, 'launch', 'find_trash_can_demo.launch.py')
+            ),
+            launch_arguments={
+                'config_file': config,
+                'mode': LaunchConfiguration('mode'),
+                'navigation_mode': 'depth_only',
+                'depth_image_topic': '/camera/camera/aligned_depth_to_color/image_raw',
+                'launch_vlm_monitor': 'false',
+            }.items(),
+        ),
     ])

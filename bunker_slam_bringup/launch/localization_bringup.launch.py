@@ -59,8 +59,8 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument('database_path', default_value=default_database_path()),
-        DeclareLaunchArgument('bunker_port', default_value='can3'),
-        DeclareLaunchArgument('arm_can_port', default_value='can2'),
+        DeclareLaunchArgument('bunker_port', default_value=''),
+        DeclareLaunchArgument('arm_can_port', default_value=''),
         DeclareLaunchArgument('serial_no', default_value='261222075829'),
         DeclareLaunchArgument('enable_pointcloud', default_value='true'),
         DeclareLaunchArgument('configure_can', default_value='true'),

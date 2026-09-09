@@ -1,0 +1,5 @@
+repositories:
+  ABot-Claw-piperX:
+    type: git
+    url: https://github.com/iliyas-tleuzhan/ABot-Claw-piperX.git
+    version: 9ff39fd2d43c5e4ded308a5eb4027c907196c5bd

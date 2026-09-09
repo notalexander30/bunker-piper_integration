@@ -345,7 +345,7 @@ When ready for a controlled chassis test, launch the chassis driver separately a
 
 ```bash
 source install/setup.bash
-ros2 launch bunker_base bunker_base.launch.py port_name:=can3 is_bunker_mini:=true
+ros2 launch bunker_base bunker_base.launch.py port_name:=BUNKER_CAN is_bunker_mini:=true
 ros2 launch bunker_autonomy find_trash_can_realsense.launch.py mode:=drive
 ```
 

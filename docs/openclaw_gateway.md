@@ -1,30 +1,63 @@
-# Supported OpenClaw Gateway
+# OpenClaw and PiPER Agent integration
 
-The OpenClaw gateway is a supported Nav-Man component. The integration keeps
-the direct manipulation API and higher-level gateway as separate layers:
+Nav-Man supports the Iliyas ABot/OpenClaw layering from the supplied live tmux
+reference:
 
 ```mermaid
 flowchart LR
-  Client[Operator / Agent] --> GW[OpenClaw Gateway\n127.0.0.1:8893]
-  GW --> API[PiPER Touch API\n127.0.0.1:8892]
-  API --> ROS[ROS 2 services/actions\nfront PiPER MoveIt\nsearch_marker\nwall_approach]
-  ROS --> HW[Trystan-owned hardware topics\n/joint_states /tf\n/front_camera/*]
+  O[OpenClaw gateway and TUI] --> A[ABot PiPER Agent Server\n127.0.0.1:8893]
+  A --> API[PiPER Touch API\n127.0.0.1:8892]
+  API --> ROS[ROS 2 services and actions\nMoveIt + marker search/touch]
+  ROS --> HW[Single Nav-Man hardware owner]
 ```
 
-## Ports
-
-| Port | Layer | Purpose |
+| Port | Owner | Purpose |
 |---|---|---|
-| `8892` | `piper_touch_marker_api.py` | Lower-level front PiPER marker search, approach, touch, previous pose, health, and motion API. |
-| `8893` | OpenClaw gateway | Higher-level gateway for agent/OpenClaw commands that should call `8892` instead of owning ROS hardware directly. |
+| `8892` | This repository | Low-level marker search, approach, touch, saved poses, health, and motion gate. |
+| `8893` | Preferred: external Iliyas ABot Agent Server | OpenClaw-facing tools, leases, health, and state. |
+| `8893` | Fallback: bundled compatibility gateway | Lightweight `/openclaw/*` proxy when ABot is not installed. |
 
-## Rule
+Only one implementation may bind 8893. Neither implementation may start a
+second hardware driver, camera, robot-state publisher, MoveIt stack, RTAB-Map,
+Nav2 stack, 8892 API, or TF branch.
 
-The `8893` gateway must not start a second PiPER driver, RealSense node, robot-state-publisher, MoveIt stack, RTAB-Map instance, Nav2 instance, or TF branch. It should translate high-level OpenClaw requests into validated calls against `8892`.
+## Preferred Iliyas Agent Server
 
-## Gateway Contract
+Install the optional checkout outside `/ros2_ws/src`, then pass it to the
+workflow launcher. See
+[`iliyas_openclaw_integration.md`](iliyas_openclaw_integration.md).
 
-Minimum endpoints for the gateway:
+```bash
+ros2 run bunker_slam_bringup start_nav_man_workflow.py --replace \
+  --abot-root /opt/nav-man-agent/ABot-Claw-piperX \
+  --database-path /ros2_ws/maps/site.db \
+  --bunker-can "$BUNKER_CAN" \
+  --front-piper-can "$FRONT_PIPER_CAN" \
+  --rear-piper-can "$REAR_PIPER_CAN" \
+  --front-camera-serial "$FRONT_CAMERA_SERIAL"
+```
+
+Check both layers:
+
+```bash
+curl -fsS http://127.0.0.1:8892/health | python3 -m json.tool
+curl -fsS http://127.0.0.1:8893/health | python3 -m json.tool
+```
+
+The Agent Server exposes `/tools/*` routes and requires an active lease for
+execution. The exact routes are owned by the selected ABot revision.
+
+## Bundled compatibility gateway
+
+When `--abot-root` is omitted, the launcher starts the bundled proxy on 8893:
+
+```bash
+ros2 run piper_x_aruco_wall_approach openclaw_gateway.py \
+  --host 127.0.0.1 --port 8893 \
+  --api-base http://127.0.0.1:8892
+```
+
+Its compatibility endpoints are:
 
 ```text
 GET  /health
@@ -36,41 +69,11 @@ POST /openclaw/retract
 POST /openclaw/stop
 ```
 
-The gateway should forward to the lower-level API only after checking:
-
-- Nav-Man ROS domain is reachable.
-- `8892 /health` is healthy.
-- `/front_piper/control_enable` is true when execution is requested.
-- `PIPER_TOUCH_ALLOW_EXECUTION=1` is set for physical motion.
-- The request is explicit about dry-run versus execute.
-
-## Manual Lower-Level API Check
-
-```bash
-curl -s http://127.0.0.1:8892/health | python3 -m json.tool
-```
-
-## Gateway Check
-
-Start the included gateway:
-
-```bash
-ros2 run piper_x_aruco_wall_approach openclaw_gateway.py \
-  --host 127.0.0.1 \
-  --port 8893 \
-  --api-base http://127.0.0.1:8892
-```
-
-Then check it:
-
-```bash
-curl -s http://127.0.0.1:8893/health | python3 -m json.tool
-curl -s http://127.0.0.1:8893/capabilities | python3 -m json.tool
-```
+This fallback is not the lease-aware ABot Agent Server.
 
 ## Install the OpenClaw skill
 
-Copy or symlink the included skill into the target OpenClaw workspace:
+Copy or symlink the repository skill into the OpenClaw workspace:
 
 ```bash
 mkdir -p /path/to/openclaw-workspace/skills
@@ -78,5 +81,6 @@ ln -s /ros2_ws/src/bunker-piper_integration/openclaw/skills/piper-touch-marker \
   /path/to/openclaw-workspace/skills/piper-touch-marker
 ```
 
-The skill only calls the supported localhost gateway. It does not own ROS or
-robot hardware.
+Physical execution requires explicit operator approval and both the 8892 and
+8893 execution gates. The launcher keeps them disabled unless
+`--allow-piper-motion` is supplied.

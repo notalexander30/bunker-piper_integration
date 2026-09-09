@@ -47,7 +47,7 @@ def validate_piper_can(context):
     if missing:
         raise RuntimeError(
             'start_piper_drivers:=true requires real PiPER CAN interfaces. '
-            'Use front_piper_can:=can2 and rear_piper_can:=can3 when each '
+            'Pass the discovered front_piper_can and rear_piper_can when each '
             'corresponding driver is enabled. Missing: '
             + ', '.join(missing)
         )
@@ -120,12 +120,12 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'front_piper_can',
-            default_value='can2',
+            default_value='',
             description='Front PiPER SocketCAN interface.',
         ),
         DeclareLaunchArgument(
             'rear_piper_can',
-            default_value='can3',
+            default_value='',
             description='Rear PiPER SocketCAN interface.',
         ),
         DeclareLaunchArgument('is_bunker_mini', default_value='true'),

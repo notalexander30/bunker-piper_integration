@@ -199,4 +199,4 @@ def test_door_launch_has_a_dedicated_yolo_rviz_node():
     assert "'camera_rviz': 'false'" in source
     assert "'door_yolo_d435i.launch.py'" in source
     assert "'weights_path': LaunchConfiguration('weights_path')" not in source
-    assert "launch_arguments={'port_name': 'can3'" in source
+    assert "'port_name': LaunchConfiguration('bunker_can')" in source

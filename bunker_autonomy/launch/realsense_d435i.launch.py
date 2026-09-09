@@ -70,8 +70,8 @@ def generate_launch_description():
             parameters=[
                 camera_parameters,
                 # RealSense serial numbers are numeric-looking identifiers, not
-                # integers.  Without this explicit type ROS parses e.g.
-                # 243322074578 as an integer and the driver rejects it.
+                # integers. Without this explicit type ROS parses a
+                # numeric-looking camera serial as an integer and rejects it.
                 {'serial_no': ParameterValue(
                     LaunchConfiguration('serial_no'), value_type=str)},
             ],

@@ -144,11 +144,11 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        DeclareLaunchArgument('arm_can_port', default_value='can2'),
+        DeclareLaunchArgument('arm_can_port', default_value=''),
         DeclareLaunchArgument('start_arm_driver', default_value='true'),
         DeclareLaunchArgument('start_rear_arm_driver', default_value='false'),
         DeclareLaunchArgument(
-            'rear_arm_can_port', default_value='can0',
+            'rear_arm_can_port', default_value='',
             description='Confirmed CAN interface for the physical rear PiPER.'),
         DeclareLaunchArgument(
             'joint_states_topic', default_value='/piper/feedback/joint_states',
