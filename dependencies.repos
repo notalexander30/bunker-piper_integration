@@ -7,6 +7,10 @@ repositories:
     type: git
     url: https://github.com/agilexrobotics/bunker_ros2.git
     version: f15130fcc4906ca8d9ef8efa85e0934e6c3867e6
+  ugv_sdk:
+    type: git
+    url: https://github.com/agilexrobotics/ugv_sdk.git
+    version: 3f359791400f39bfcf176b1e1edd166f76041ac5
   frontier_exploration_ros2:
     type: git
     url: https://github.com/mertgulerx/frontier_exploration_ros2.git
