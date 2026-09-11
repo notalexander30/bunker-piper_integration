@@ -55,16 +55,53 @@ jobs:
               bunker_autonomy \
               piper_x_aruco_wall_approach
 
-      - name: Test repository packages
+      - name: Test bunker_autonomy
         shell: bash
         working-directory: /tmp/nav-man-ws
         run: |
           source /opt/ros/humble/setup.bash
           source install/setup.bash
           colcon test --return-code-on-test-failure \
-            --packages-select \
-              bunker_slam_bringup \
-              bunker_dual_piper_nav2 \
-              bunker_autonomy \
-              piper_x_aruco_wall_approach
+            --packages-select bunker_autonomy
+          colcon test-result --verbose
+
+      - name: Test bunker_dual_piper_nav2
+        if: ${{ always() }}
+        shell: bash
+        working-directory: /tmp/nav-man-ws
+        run: |
+          source /opt/ros/humble/setup.bash
+          source install/setup.bash
+          colcon test --return-code-on-test-failure \
+            --packages-select bunker_dual_piper_nav2
+          colcon test-result --verbose --test-result-base build/bunker_dual_piper_nav2
+
+      - name: Test bunker_slam_bringup
+        if: ${{ always() }}
+        shell: bash
+        working-directory: /tmp/nav-man-ws
+        run: |
+          source /opt/ros/humble/setup.bash
+          source install/setup.bash
+          colcon test --return-code-on-test-failure \
+            --packages-select bunker_slam_bringup
+          colcon test-result --verbose --test-result-base build/bunker_slam_bringup
+
+      - name: Test piper_x_aruco_wall_approach
+        if: ${{ always() }}
+        shell: bash
+        working-directory: /tmp/nav-man-ws
+        run: |
+          source /opt/ros/humble/setup.bash
+          source install/setup.bash
+          colcon test --return-code-on-test-failure \
+            --packages-select piper_x_aruco_wall_approach
+          colcon test-result --verbose \
+            --test-result-base build/piper_x_aruco_wall_approach
+
+      - name: Summarize all test results
+        if: ${{ always() }}
+        shell: bash
+        working-directory: /tmp/nav-man-ws
+        run: |
           colcon test-result --verbose
