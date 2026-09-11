@@ -46,7 +46,7 @@ COPY . /ros2_ws/src/bunker-piper_integration
 
 RUN bash -lc 'source /opt/ros/humble/setup.bash && \
     rosdep install --from-paths src --ignore-src -r -y \
-      --skip-keys "ament_python catkin bunker_object_follower semantic_memory"'
+      --skip-keys "ament_python catkin warehouse_ros_mongo bunker_object_follower semantic_memory"'
 
 RUN bash -lc 'source /opt/ros/humble/setup.bash && \
     colcon build --symlink-install \

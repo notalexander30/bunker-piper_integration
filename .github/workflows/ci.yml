@@ -41,7 +41,7 @@ jobs:
           source /opt/ros/humble/setup.bash
           rosdep update
           rosdep install --from-paths /tmp/nav-man-ws/src --ignore-src -r -y \
-            --skip-keys "ament_python catkin bunker_object_follower semantic_memory"
+            --skip-keys "ament_python catkin warehouse_ros_mongo bunker_object_follower semantic_memory"
 
       - name: Build
         shell: bash

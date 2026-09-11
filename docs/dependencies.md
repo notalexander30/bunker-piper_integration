@@ -26,7 +26,7 @@ released ROS dependencies are installed through rosdep or the Docker image.
     sudo rosdep init 2>/dev/null || true
     rosdep update
     rosdep install --from-paths src --ignore-src -r -y \
-      --skip-keys "ament_python catkin bunker_object_follower semantic_memory"
+      --skip-keys "ament_python catkin warehouse_ros_mongo bunker_object_follower semantic_memory"
 
 bunker_object_follower and semantic_memory are optional lab demo packages that
 currently have no public upstream URL. Their launch files remain available,
@@ -38,6 +38,10 @@ package, so rosdep is instructed not to resolve it.
 The pinned `ugv_sdk` manifest still names the ROS 1 `catkin` build tool. In this
 ROS 2 workspace the SDK intentionally uses its standalone CMake path, so CI
 skips that rosdep key while retaining the SDK's real system dependencies.
+
+The PiPER MoveIt package declares `warehouse_ros_mongo` as an optional runtime
+database backend. ROS 2 Humble does not publish that binary for Ubuntu 22.04,
+and the maintained Nav-Man workflow does not use it, so it is also skipped.
 
 ## OpenClaw integration
 

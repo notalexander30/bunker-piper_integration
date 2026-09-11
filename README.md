@@ -242,7 +242,7 @@ git clone https://github.com/notalexander30/bunker-piper_integration.git
 cd ..
 vcs import src < src/bunker-piper_integration/dependencies.repos
 rosdep install --from-paths src --ignore-src -r -y \
-  --skip-keys "ament_python catkin bunker_object_follower semantic_memory"
+  --skip-keys "ament_python catkin warehouse_ros_mongo bunker_object_follower semantic_memory"
 colcon build --symlink-install --packages-up-to \
   bunker_slam_bringup bunker_dual_piper_nav2 bunker_autonomy \
   piper_x_aruco_wall_approach
