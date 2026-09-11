@@ -38,15 +38,17 @@ RUN rosdep init 2>/dev/null || true
 RUN rosdep update
 
 WORKDIR /ros2_ws
+RUN mkdir -p /ros2_ws/src
 
 COPY dependencies.repos /tmp/nav-man-dependencies.repos
 RUN vcs import /ros2_ws/src < /tmp/nav-man-dependencies.repos
 
 COPY . /ros2_ws/src/bunker-piper_integration
 
-RUN bash -lc 'source /opt/ros/humble/setup.bash && \
+RUN apt-get update && bash -lc 'source /opt/ros/humble/setup.bash && \
     rosdep install --from-paths src --ignore-src -r -y \
-      --skip-keys "ament_python catkin warehouse_ros_mongo bunker_object_follower semantic_memory"'
+      --skip-keys "ament_python catkin warehouse_ros_mongo bunker_object_follower semantic_memory"' \
+  && rm -rf /var/lib/apt/lists/*
 
 RUN bash -lc 'source /opt/ros/humble/setup.bash && \
     colcon build --symlink-install \

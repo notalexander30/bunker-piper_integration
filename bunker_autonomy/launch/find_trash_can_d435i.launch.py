@@ -91,7 +91,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'simple_vlm_config',
             default_value=os.path.join(
-                get_package_share_directory('simple_vlm'), 'config', 'config.yaml'
+                autonomy_share, 'config', 'simple_vlm_vla.yaml'
             ),
         ),
         DeclareLaunchArgument(

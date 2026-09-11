@@ -103,6 +103,18 @@ export ROS_LOCALHOST_ONLY=1
 export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 ```
 
+If the optional vision-language autonomy is used, provide its credential at
+runtime (never commit it to YAML):
+
+```bash
+export DASHSCOPE_API_KEY=
+```
+
+Replace the blank value in the container or deployment environment. The
+repository-owned VLA prompt is installed as
+`bunker_autonomy/config/simple_vlm_vla.yaml`; both trash-can launch files select
+it automatically.
+
 ## 3. Discover the robot devices
 
 Never assume Linux will preserve a particular `canN` assignment.

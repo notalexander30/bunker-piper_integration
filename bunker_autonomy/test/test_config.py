@@ -1,8 +1,6 @@
 from pathlib import Path
 import ast
-import os
 
-import pytest
 import yaml
 
 
@@ -110,12 +108,7 @@ def test_autonomy_yaml_loads_expected_parameters():
 
 
 def test_vla_prompt_requests_dynamic_sensor_informed_bounded_actions():
-    config_path = Path(os.environ.get(
-        'SIMPLE_VLM_CONFIG',
-        Path(__file__).parents[3] / 'simple_vlm' / 'config.yaml',
-    ))
-    if not config_path.is_file():
-        pytest.skip('simple_vlm is an external dependency and is not installed')
+    config_path = Path(__file__).parents[1] / 'config' / 'simple_vlm_vla.yaml'
     config = yaml.safe_load(config_path.read_text())
     prompt = config['prompt']
 

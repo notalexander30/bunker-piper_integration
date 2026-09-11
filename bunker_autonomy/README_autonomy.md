@@ -268,9 +268,13 @@ Start the LiDAR and RealSense separately (and the chassis driver only when using
 cd ~/ros2_ws
 colcon build --packages-select simple_vlm bunker_autonomy
 source install/setup.bash
+export DASHSCOPE_API_KEY=
 unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY all_proxy ALL_PROXY
 ros2 launch bunker_autonomy find_trash_can_realsense.launch.py mode:=dry_run
 ```
+
+Replace the blank credential value at runtime. The launch file uses the
+repository-owned `simple_vlm_vla.yaml` prompt by default.
 
 By default this launch reuses the existing RealSense process. Start it first with:
 
@@ -324,8 +328,10 @@ Terminal 3, simple VLM:
 
 ```bash
 source install/setup.bash
+export DASHSCOPE_API_KEY=
 unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY all_proxy ALL_PROXY
-ros2 run simple_vlm simple_vlm_node --ros-args -p config_file:=src/simple_vlm/config.yaml
+ros2 run simple_vlm simple_vlm_node --ros-args \
+  -p config_file:=$(ros2 pkg prefix bunker_autonomy)/share/bunker_autonomy/config/simple_vlm_vla.yaml
 ```
 
 Terminal 4, autonomy dry run with no robot movement:

@@ -1,0 +1,30 @@
+# Keep credentials out of the repository. The pinned simple_vlm package reads
+# DASHSCOPE_API_KEY when this value is empty.
+api_key: null
+base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+
+image_topic: "/camera/camera/color/image_raw"
+model_name: "qwen3-vl-plus"
+prompt: >-
+  You are the vision-language-action planner for an AgileX BUNKER MINI tracked
+  robot using a forward-facing RGB camera. Find and approach a physical trash
+  can safely. Do not confuse furniture, boxes, doors, or patterns with a trash
+  can. Inspect the newest image and SENSOR_CONTEXT, then return exactly one
+  compact JSON object with no markdown:
+  {"target_visible":true|false,"target_position":"left"|"center"|"right"|"unknown",
+  "target_bbox_norm":[x_min,y_min,x_max,y_max]|null,
+  "action":"forward"|"curve_left"|"curve_right"|"turn_left"|"turn_right"|"stop",
+  "linear_velocity_mps":0.0,"angular_velocity_radps":0.0,
+  "confidence":0.0,"reason":"short explanation"}.
+  Replan every image; do not follow a fixed motion loop. Never invent a target
+  and never output reverse motion. Maximum speed is 0.06 m/s forward and 0.15
+  rad/s angular; positive angular is left. If no safe route is available, output
+  stop. When the target is absent, set target_bbox_norm=null. When visible,
+  tightly bound the complete trash can, center it, and approach only through a
+  clear route. Keep reason under ten words. Local depth and LiDAR safety override
+  every proposal and complete the mission at a 0.30 m target standoff.
+
+sequential_mode: true
+process_interval: 0.25
+save_results: true
+save_directory: "~/vlm_results"

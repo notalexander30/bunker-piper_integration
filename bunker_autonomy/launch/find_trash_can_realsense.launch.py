@@ -84,9 +84,11 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'simple_vlm_config',
             default_value=os.path.join(
-                get_package_share_directory('simple_vlm'), 'config', 'config.yaml'
+                get_package_share_directory('bunker_autonomy'),
+                'config',
+                'simple_vlm_vla.yaml',
             ),
-            description='Path to the simple_vlm YAML configuration.',
+            description='Path to the Nav-Man simple_vlm YAML configuration.',
         ),
         DeclareLaunchArgument(
             'autonomy_config',
