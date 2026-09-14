@@ -2,6 +2,21 @@
 
 [![ROS 2 Humble CI](https://github.com/notalexander30/bunker-piper_integration/actions/workflows/ci.yml/badge.svg)](https://github.com/notalexander30/bunker-piper_integration/actions/workflows/ci.yml)
 
+> **New here?** Start with the [step-by-step setup and startup guide](docs/getting_started.md).
+> If something does not start, use the [troubleshooting guide](docs/troubleshooting.md).
+
+## Documentation map
+
+| I want to… | Open this guide |
+|---|---|
+| Download/unpack, build, and safely start the complete system | [Getting started](docs/getting_started.md) |
+| Diagnose Docker, CAN, camera, ROS, Nav2, MoveIt, API, or CI problems | [Troubleshooting](docs/troubleshooting.md) |
+| Follow the detailed terminal-by-terminal operator procedure | [Full Nav-Man runbook](bunker_slam_bringup/NAV_MAN_INTEGRATION_STARTUP.md) |
+| Preview and inspect the combined robot model | [URDF visualization](docs/urdf_visualization.md) |
+| Identify Bunker and PiPER CAN adapters | [CAN discovery](docs/can_discovery.md) |
+| Understand source and system dependencies | [Dependencies](docs/dependencies.md) |
+| Add the optional Iliyas ABot/OpenClaw layer | [Iliyas integration](docs/iliyas_openclaw_integration.md) |
+
 ROS 2 Humble integration for an AgileX Bunker mobile base, two AgileX PiPER
 arms, an Intel RealSense D435i, RTAB-Map, Nav2, MoveIt 2, and an ArUco-guided
 front-arm touch workflow.

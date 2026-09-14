@@ -460,8 +460,19 @@ export ROS_DOMAIN_ID=173
 export ROS_LOCALHOST_ONLY=1
 export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 
+# Fill these with values discovered in Mode 3.
+export BUNKER_CAN=
+export FRONT_PIPER_CAN=
+export REAR_PIPER_CAN=
+export FRONT_CAMERA_SERIAL=
+
 ros2 run bunker_slam_bringup start_nav_man_workflow.py --replace \
-  --database-path /ros2_ws/maps/site.db
+  --mapping-mode localization \
+  --database-path /ros2_ws/maps/site.db \
+  --bunker-can "$BUNKER_CAN" \
+  --front-piper-can "$FRONT_PIPER_CAN" \
+  --rear-piper-can "$REAR_PIPER_CAN" \
+  --front-camera-serial "$FRONT_CAMERA_SERIAL"
 tmux attach -t 0
 ```
 
@@ -550,8 +561,18 @@ export ROS_DOMAIN_ID=173
 export ROS_LOCALHOST_ONLY=1
 export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 
+# Fill these with values discovered in Mode 3.
+export BUNKER_CAN=
+export FRONT_PIPER_CAN=
+export FRONT_CAMERA_SERIAL=
+
 ros2 run bunker_slam_bringup start_nav_man_workflow.py --replace \
-  --disable-rear-piper --database-path /ros2_ws/maps/site.db
+  --disable-rear-piper \
+  --mapping-mode localization \
+  --database-path /ros2_ws/maps/site.db \
+  --bunker-can "$BUNKER_CAN" \
+  --front-piper-can "$FRONT_PIPER_CAN" \
+  --front-camera-serial "$FRONT_CAMERA_SERIAL"
 tmux attach -t 0
 ```
 
@@ -2168,7 +2189,7 @@ front_camera_color_optical_frame
 rear_camera_color_optical_frame
 ```
 
-## Mode 13: Stop everything
+## Mode 14: Stop everything
 
 Stop all ROS/Nav-Man processes while keeping tmux session `0` open:
 
@@ -2220,5 +2241,5 @@ Mode 3  verify CAN/cameras
 Mode 4  start full tmux
 Mode 7  validate topics
 Mode 8  home/door navigation and manipulation calls
-Mode 13 stop
+Mode 14 stop
 ```

@@ -146,7 +146,11 @@ def cleanup_stale_manipulation_processes() -> None:
 def preflight(args: argparse.Namespace) -> None:
     if not Path("/opt/ros/humble/setup.bash").exists():
         raise SystemExit("ERROR: run this inside the ROS Humble Trystan container.")
-    if not Path("/ros2_ws/src/bunker_slam_bringup").exists():
+    source_layouts = (
+        Path("/ros2_ws/src/bunker_slam_bringup"),
+        Path("/ros2_ws/src/bunker-piper_integration/bunker_slam_bringup"),
+    )
+    if not any(path.is_dir() for path in source_layouts):
         raise SystemExit("ERROR: /ros2_ws is not mounted inside this environment.")
     if not have_command("tmux"):
         raise SystemExit("ERROR: tmux is missing in this container.")
