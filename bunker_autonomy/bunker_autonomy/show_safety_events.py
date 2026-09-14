@@ -13,7 +13,11 @@ DEFAULT_LOG_DIRECTORY = '~/vlm_results/autonomy_logs'
 def find_latest_safety_event_log(log_directory: str) -> Optional[str]:
     pattern = os.path.join(os.path.expanduser(log_directory), 'safety_events_*.jsonl')
     candidates = glob.glob(pattern)
-    return max(candidates, key=os.path.getmtime) if candidates else None
+    if not candidates:
+        return None
+    # Overlay filesystems can assign identical mtimes to files created in quick
+    # succession. The timestamped filename provides a deterministic tie-break.
+    return max(candidates, key=lambda path: (os.stat(path).st_mtime_ns, path))
 
 
 def format_safety_event(row: Dict[str, Any]) -> str:

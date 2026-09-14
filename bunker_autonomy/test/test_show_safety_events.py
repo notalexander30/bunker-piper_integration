@@ -1,4 +1,5 @@
 import json
+import os
 
 from bunker_autonomy.show_safety_events import (
     find_latest_safety_event_log,
@@ -41,6 +42,11 @@ def test_latest_log_and_recent_event_filtering(tmp_path):
         },
     ]
     new.write_text('\n'.join(json.dumps(row) for row in rows) + '\n')
+
+    # Match coarse/overlay filesystems where consecutive writes share an mtime.
+    shared_time_ns = old.stat().st_mtime_ns
+    os.utime(old, ns=(shared_time_ns, shared_time_ns))
+    os.utime(new, ns=(shared_time_ns, shared_time_ns))
 
     assert find_latest_safety_event_log(str(tmp_path)) == str(new)
     events = read_recent_events(str(new), limit=1)
